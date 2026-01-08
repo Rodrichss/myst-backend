@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
 from app.db.base import Base
 
 class User(Base):
@@ -10,3 +11,22 @@ class User(Base):
     password = Column(String(255))
     initials = Column(String(50))
     picture = Column(String(50))
+
+# Relationships
+clinical_history = relationship(
+    "ClinicalHistory",
+    backref="user",
+    uselist=False
+)
+
+contacts = relationship(
+    "Contact",
+    back_populates="user",
+    cascade="all, delete-orphan"
+)
+
+reminders = relationship(
+    "Reminder",
+    back_populates="user",
+    cascade="all, delete-orphan"
+)

@@ -56,3 +56,10 @@ class ClinicalHistory(Base):
 
     sexually_active = Column(Boolean)
     miscarriages_abortions = Column(Integer)
+
+# Relationships
+cycles = relationship(
+    "Cycle",
+    back_populates="clinical_history",
+    cascade="all, delete-orphan"
+)
