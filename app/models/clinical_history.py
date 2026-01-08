@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, Date, ForeignKey
+from sqlalchemy.orm import relationship
 from app.db.base import Base
 
 class ClinicalHistory(Base):
@@ -7,8 +8,11 @@ class ClinicalHistory(Base):
     id_history = Column(Integer, primary_key=True, index=True)
     id_user = Column(Integer, ForeignKey("users.id_user"))
 
+    # Relationship to User
+    user = relationship("User", back_populates="clinical_history")
+
     # Personal Information
-    #name = Column(String(50))
+    # name  = clinical_history.user.name
     last_name = Column(String(50))
     second_last_name = Column(String(50))
     birthdate = Column(Date)
