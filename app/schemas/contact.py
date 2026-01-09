@@ -21,4 +21,4 @@ class ContactResponse(ContactCreate):
     id_contact: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True

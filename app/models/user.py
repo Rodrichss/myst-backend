@@ -9,24 +9,25 @@ class User(Base):
     name = Column(String(50))
     email = Column(String(50), unique=True)
     password = Column(String(255))
-    initials = Column(String(50))
-    picture = Column(String(50))
+    initials = Column(String(6), nullable=True)
+    picture = Column(String(50), nullable=True)
 
-# Relationships
-clinical_history = relationship(
-    "ClinicalHistory",
-    backref="user",
-    uselist=False
-)
+    # Relationships
+    clinical_history = relationship(
+        "ClinicalHistory",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
 
-contacts = relationship(
-    "Contact",
-    back_populates="user",
-    cascade="all, delete-orphan"
-)
+    contacts = relationship(
+        "Contact",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
 
-reminders = relationship(
-    "Reminder",
-    back_populates="user",
-    cascade="all, delete-orphan"
-)
+    reminders = relationship(
+        "Reminder",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )

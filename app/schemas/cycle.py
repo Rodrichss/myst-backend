@@ -56,4 +56,4 @@ class CycleResponse(CycleCreate):
     id_cycle_entry: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True

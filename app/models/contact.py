@@ -24,8 +24,8 @@ class Contact(Base):
     phone_number = Column(String(20), unique=True)
     address = Column(String(200))
 
-# Relationships
-reminders = relationship(
-    "Reminder",
-    back_populates="contact"
-)
+    # Relationships
+    reminders = relationship(
+        "Reminder",
+        back_populates="contact"
+    )
