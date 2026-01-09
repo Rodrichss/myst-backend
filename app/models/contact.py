@@ -19,10 +19,10 @@ class Contact(Base):
     )
 
     name = Column(String(50))
-    last_name = Column(String(50))
-    email = Column(String(100), unique=True)
-    phone_number = Column(String(20), unique=True)
-    address = Column(String(200))
+    last_name = Column(String(50), nullable=True)
+    email = Column(String(100), unique=True, nullable=True)
+    phone_number = Column(String(20), unique=True, nullable=True)
+    address = Column(String(200), nullable=True)
 
     # Relationships
     reminders = relationship(

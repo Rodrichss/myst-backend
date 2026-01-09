@@ -12,58 +12,58 @@ class Cycle(Base):
     clinical_history = relationship("ClinicalHistory", back_populates="cycles")
 
     # Antropometry
-    weight = Column(Float)
-    height = Column(Float)
-    waist_circumference = Column(Float)
+    weight = Column(Float, nullable=True)
+    height = Column(Float, nullable=True)
+    waist_circumference = Column(Float, nullable=True)
 
     # Vital Signs
-    systolic_bp = Column(Integer)
-    diastolic_bp = Column(Integer)
-    heart_rate = Column(Integer)
+    systolic_bp = Column(Integer, nullable=True)
+    diastolic_bp = Column(Integer, nullable=True)
+    heart_rate = Column(Integer, nullable=True)
 
-    body_temperature = Column(Float)
-    glycemia = Column(Float)
+    body_temperature = Column(Float, nullable=True)
+    glycemia = Column(Float, nullable=True)
 
     # Anticonceptives and sexual activity
-    anticonceptive_use = Column(Boolean)
-    anticonceptive_type = Column(String(50))
+    anticonceptive_use = Column(Boolean, nullable=True)
+    anticonceptive_type = Column(String(50), nullable=True)
 
-    sexual_penetration = Column(Boolean)
+    sexual_penetration = Column(Boolean, nullable=True)
 
-    on_fertile_window = Column(Boolean)
+    on_fertile_window = Column(Boolean, nullable=True)
 
     # Flow and secretions
-    menstrual_flow = Column(Integer)
-    vaginal_discharge = Column(Integer)
+    menstrual_flow = Column(Integer, nullable=True)
+    vaginal_discharge = Column(Integer, nullable=True)
 
     # Mood
-    mood = Column(Integer)
+    mood = Column(Integer, nullable=True)
 
-    anxiety = Column(Integer)
-    stress = Column(Integer)
+    anxiety = Column(Integer, nullable=True)
+    stress = Column(Integer, nullable=True)
 
     # Habits
-    sleep_time = Column(Time)
+    sleep_time = Column(Time, nullable=True)
 
-    exercise = Column(String(50))
-    exercise_time = Column(Time)
+    exercise = Column(String(50), nullable=True)
+    exercise_time = Column(Time, nullable=True)
 
-    water_consumption = Column(Float)
+    water_consumption = Column(Float, nullable=True)
 
-    hobbies_activities = Column(String(100))
+    hobbies_activities = Column(String(100), nullable=True)
 
     # Symptoms
-    cramps = Column(Integer)
-    cravings = Column(Integer)
-    symptoms = Column(String(255))
+    cramps = Column(Integer, nullable=True)
+    cravings = Column(Integer, nullable=True)
+    symptoms = Column(String(255), nullable=True)
 
     # Tests
-    pregnancy_test = Column(Integer)
-    ovulation_test = Column(Integer)
+    pregnancy_test = Column(Integer, nullable=True)
+    ovulation_test = Column(Integer, nullable=True)
 
     # Notes
-    notes = Column(String(255))
+    notes = Column(String(255), nullable=True)
 
     # Dates
-    period_start_date = Column(Date)
-    period_end_date = Column(Date)
+    period_start_date = Column(Date, nullable=True)
+    period_end_date = Column(Date, nullable=True)

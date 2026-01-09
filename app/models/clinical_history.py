@@ -13,49 +13,48 @@ class ClinicalHistory(Base):
 
     # Personal Information
     # name  = clinical_history.user.name
-    last_name = Column(String(50))
-    second_last_name = Column(String(50))
-    birthdate = Column(Date)
-    sex_legally = Column(String(10))
-    sex_biology = Column(String(10))
+    last_name = Column(String(50), nullable=True)
+    second_last_name = Column(String(50), nullable=True)
+    birthdate = Column(Date, nullable=True)
+    sex_legally = Column(String(10), nullable=True)
+    sex_biology = Column(String(10), nullable=True)
 
     # Clinical History
-    depression_screening = Column(Boolean)
-    depression = Column(Boolean)
+    depression_screening = Column(Boolean, nullable=True)
+    depression = Column(Boolean, nullable=True)
 
-    memory_screening = Column(Boolean)
-    memory_alterations = Column(Boolean)
-    dementia = Column(Boolean)
+    memory_screening = Column(Boolean, nullable=True)
+    memory_alterations = Column(Boolean, nullable=True)
+    dementia = Column(Boolean, nullable=True)
 
-    urinary_incontinence_screening = Column(Boolean)
-    urinary_incontinence = Column(Boolean)
+    urinary_incontinence_screening = Column(Boolean, nullable=True)
+    urinary_incontinence = Column(Boolean, nullable=True)
 
-    anemia_screening = Column(Boolean)
-    obesity_screening = Column(Boolean)
+    anemia_screening = Column(Boolean, nullable=True)
+    obesity_screening = Column(Boolean, nullable=True)
 
-    osteoporosis_screening = Column(Boolean)
+    osteoporosis_screening = Column(Boolean, nullable=True)
 
-    diabetes_mellitus = Column(String(50))
+    diabetes_mellitus = Column(String(50), nullable=True)
+    arterial_hypertension = Column(Boolean, nullable=True)
 
-    arterial_hypertension = Column(Boolean)
+    sustance_use = Column(String(50), nullable=True)
 
-    sustance_use = Column(String(50))
+    std = Column(String(100), nullable=True)
 
-    std = Column(String(100))
+    turner_syndrome_screening = Column(Boolean, nullable=True)
 
-    turner_syndrome_screening = Column(Boolean)
+    endometriosis_screening = Column(Boolean, nullable=True)
+    endometriosis = Column(Boolean, nullable=True)
 
-    endometriosis_screening = Column(Boolean)
-    endometriosis = Column(Boolean)
+    pcos_screening = Column(Boolean, nullable=True)
+    pcos = Column(Boolean, nullable=True)
 
-    pcos_screening = Column(Boolean)
-    pcos = Column(Boolean)
+    average_menstrual_cycle = Column(Integer, nullable=True)
+    average_ovulation = Column(Integer, nullable=True)
 
-    average_menstrual_cycle = Column(Integer)
-    average_ovulation = Column(Integer)
-
-    sexually_active = Column(Boolean)
-    miscarriages_abortions = Column(Integer)
+    sexually_active = Column(Boolean, nullable=True)
+    miscarriages_abortions = Column(Integer, nullable=True)
 
     # Relationships
     cycles = relationship(

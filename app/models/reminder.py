@@ -15,13 +15,13 @@ class Reminder(Base):
     contact = relationship("Contact", back_populates="reminders")
 
     title = Column(String(100))
-    description = Column(String(255))
+    description = Column(String(255), nullable=True)
 
     date = Column(Date)
     time = Column(Time)
 
-    repeats = Column(String(50))      # daily, weekly, monthly
-    type = Column(String(50))         # medication, appointment
-    priority = Column(String(20))     # low, medium, high
+    repeats = Column(String(50), nullable=True)      # daily, weekly, monthly
+    type = Column(String(50), nullable=True)         # medication, appointment
+    priority = Column(String(20), nullable=True)     # low, medium, high
 
     is_completed = Column(Boolean, default=False)
