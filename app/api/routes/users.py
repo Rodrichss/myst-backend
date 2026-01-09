@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.security import hash_password
+
 from app.db.database import SessionLocal
 from app.models.user import User
 from app.schemas.user import (
@@ -26,7 +28,15 @@ def create_user(
     data: UserCreate,
     db: Session = Depends(get_db)
 ):
-    user = User(**data.dict())
+    hashed_password = hash_password(data.password)
+    user = User(
+        name=data.name,
+        email=data.email,
+        password=hashed_password,
+        initials=data.initials,
+        picture=data.picture
+    )
+
     db.add(user)
     db.commit()
     db.refresh(user)
