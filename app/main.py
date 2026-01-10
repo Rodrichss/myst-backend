@@ -14,7 +14,7 @@ from app.api.routes import (
 )
 
 # Create tables in the database (only for development)
-#Base.metadata.create_all(bind=engine)
+#Base.metadata.create_all(bind=engine) # descomentar para crear las tablas en la base de datos
 # GRANT ALL ON SCHEMA public TO myst_user; (sql)
 
 app = FastAPI(
