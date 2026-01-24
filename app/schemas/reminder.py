@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from datetime import date, time
+import datetime
 from typing import Optional
 
 class ReminderCreate(BaseModel):
@@ -9,8 +9,8 @@ class ReminderCreate(BaseModel):
     title: str
     description: Optional[str] = None
 
-    date: date
-    time: time
+    date: datetime.date
+    time: datetime.time
 
     repeats: Optional[str] = None
     type: Optional[str] = None
@@ -20,8 +20,8 @@ class ReminderUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
 
-    date: Optional[date] = None
-    time: Optional[time] = None
+    date: Optional[datetime.date] = None
+    time: Optional[datetime.time] = None
 
     repeats: Optional[str] = None
     type: Optional[str] = None
