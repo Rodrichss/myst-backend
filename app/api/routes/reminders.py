@@ -32,7 +32,7 @@ def create_reminder(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if data.id_contact:
+    if data.id_contact is not None:
         contact = (
             db.query(Contact)
             .filter(Contact.id_contact == data.id_contact)
@@ -41,7 +41,12 @@ def create_reminder(
         if not contact:
             raise HTTPException(status_code=404, detail="Contact not found")
 
-    reminder = Reminder(**data.dict())
+    payload = data.dict()
+    
+    if payload["id_contact"] == 0:
+        payload["id_contact"] = None
+
+    reminder = Reminder(**payload)
     db.add(reminder)
     db.commit()
     db.refresh(reminder)
