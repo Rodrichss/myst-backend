@@ -3,8 +3,6 @@ from datetime import date
 from typing import Optional
 
 class ClinicalHistoryCreate(BaseModel):
-    id_user: int
-
     last_name: Optional[str] = None
     second_last_name: Optional[str] = None
     birthdate: Optional[date] = None
@@ -49,7 +47,6 @@ class ClinicalHistoryUpdate(ClinicalHistoryCreate):
 
 class ClinicalHistoryResponse(ClinicalHistoryCreate):
     id_history: int
-    user_name: Optional[str] = None
 
     class Config:
         from_attributes = True

@@ -6,7 +6,12 @@ class ClinicalHistory(Base):
     __tablename__ = "clinical_history"
 
     id_history = Column(Integer, primary_key=True, index=True)
-    id_user = Column(Integer, ForeignKey("users.id_user"))
+    id_user = Column(
+    Integer,
+    ForeignKey("users.id_user"),
+    nullable=False,
+    unique=True
+)
 
     # Relationship to User
     user = relationship("User", back_populates="clinical_history")
