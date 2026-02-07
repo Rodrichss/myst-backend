@@ -2,8 +2,6 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 class ContactCreate(BaseModel):
-    id_user: int
-
     name: str
     last_name: Optional[str] = None
     email: Optional[EmailStr] = None

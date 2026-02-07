@@ -10,7 +10,7 @@ class Contact(Base):
     __tablename__ = "contact"
 
     id_contact = Column(Integer, primary_key=True, index=True)
-    id_user = Column(Integer, ForeignKey("users.id_user"))
+    id_user = Column(Integer, ForeignKey("users.id_user"), nullable=False)
 
     #  Relationship to user
     user = relationship(
