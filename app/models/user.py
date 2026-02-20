@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 
@@ -11,6 +11,9 @@ class User(Base):
     password = Column(String(255))
     initials = Column(String(6), nullable=True)
     picture = Column(String(50), nullable=True)
+
+    is_verified = Column(Boolean, default=False)
+    verification_token = Column(String(255), nullable=True)
 
     # Relationships
     clinical_history = relationship(

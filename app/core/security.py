@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from jose import jwt
 from passlib.context import CryptContext
+import secrets
 
 from app.core.config import (
     SECRET_KEY,
@@ -10,6 +11,8 @@ from app.core.config import (
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+def generate_verification_token():
+    return secrets.token_urlsafe(32)
 
 def hash_password(password: str) -> str:
     if len(password.encode("utf-8")) > 72:

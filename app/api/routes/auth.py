@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -19,7 +20,25 @@ def get_db():
     finally:
         db.close()
 
+# verificar correo
+@router.get("/verify-email")
+def verify_email(token: str = Query(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.verification_token == token).first()
 
+    if not user:
+        raise HTTPException(status_code=404, detail="Invalid verification token")
+
+    if user.is_verified:
+        return HTMLResponse("<h2>Email already verified</h2>")
+
+    user.is_verified = True
+    user.verification_token = None
+
+    db.commit()
+
+    return HTMLResponse("<h2>Email verified successfully</h2>")
+
+# ingresar
 @router.post("/login", response_model=Token)
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -32,6 +51,12 @@ def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"
+        )
+
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not verified"
         )
 
     access_token = create_access_token(

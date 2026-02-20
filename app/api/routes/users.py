@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.security import hash_password
+from app.core.security import hash_password, generate_verification_token
 from app.core.dependencies import get_current_user, get_db
+
+from app.services.email_service import send_verification_email
 
 from app.models.user import User
 from app.schemas.user import (
@@ -31,18 +33,24 @@ def create_user(
         )
 
     hashed_password = hash_password(data.password)
+    token = generate_verification_token()
 
     user = User(
         name=data.name,
         email=data.email,
         password=hashed_password,
         initials=data.initials,
-        picture=data.picture
+        picture=data.picture,
+        verification_token=token,
+        is_verified=False
     )
 
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    send_verification_email(user.email, token)
+
     return user
 
 # Get current user (private)
