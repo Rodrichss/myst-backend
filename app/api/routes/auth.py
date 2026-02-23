@@ -1,12 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from datetime import datetime, timedelta
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Form
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.db.database import SessionLocal
+from app.models.password_reset import PasswordResetToken
 from app.models.user import User
-from app.schemas.auth import Token
-from app.core.security import verify_password, create_access_token
+from app.schemas.auth import ResetPasswordRequest, Token, ForgotPasswordRequest
+from app.services.email_service import send_reset_password_email
+from app.core.security import hash_password, verify_password, create_access_token
 
 router = APIRouter(
     prefix="/auth",
@@ -67,3 +72,96 @@ def login(
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+# olvidé mi contraseña
+@router.post("/forgot-password")
+def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+
+    user = db.query(User).filter(User.email == data.email).first()
+    if not user:
+        raise HTTPException(404, "Usuario no encontrado")
+
+    token = str(uuid.uuid4())
+
+    reset = PasswordResetToken(
+        user_id=user.id_user,
+        token=token,
+        expires_at=datetime.utcnow() + timedelta(hours=1)
+    )
+
+    db.add(reset)
+    db.commit()
+
+    # enviar correo con link
+    send_reset_password_email(user.email, token)
+
+    return {"message": "Se envió correo para restablecer contraseña"}
+
+# restablecer contraseña
+@router.post("/reset-password")
+def reset_password(
+    token: str = Form(...),
+    new_password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+
+    # Buscar el token en la base de datos
+    reset = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token == token
+    ).first()
+
+    if not reset:
+        raise HTTPException(
+            status_code=400,
+            detail="Token inválido"
+        )
+
+    # Verificar si el token expiró
+    if reset.expires_at < datetime.utcnow():
+        db.delete(reset)
+        db.commit()
+        raise HTTPException(
+            status_code=400,
+            detail="Token expirado"
+        )
+
+    # Buscar al usuario asociado al token
+    user = db.query(User).filter(
+        User.id_user == reset.user_id
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="Usuario no encontrado"
+        )
+
+    user.password = hash_password(new_password)
+
+    db.delete(reset)
+    db.commit()
+
+    return {"message": "Contraseña actualizada correctamente"}
+
+# formulario de restablecer contraseña
+@router.get("/reset-password", response_class=HTMLResponse)
+def reset_password_form(token: str):
+
+    return f"""
+    <html>
+        <body>
+            <h2>Restablecer contraseña</h2>
+
+            <form action="/auth/reset-password" method="post">
+                <input type="hidden" name="token" value="{token}" />
+
+                <label>Nueva contraseña:</label><br>
+                <input type="password" name="new_password" required><br><br>
+
+                <button type="submit">Cambiar contraseña</button>
+            </form>
+
+        </body>
+    </html>
+    """
+
