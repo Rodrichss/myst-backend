@@ -41,11 +41,9 @@ def list_my_contacts(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return (
-        db.query(Contact)
-        .filter(Contact.id_user == current_user.id_user)
-        .all()
-    )
+    return db.query(Contact).filter(
+        Contact.id_user == current_user.id_user
+    ).all()
 
 
 # Update my contact (private)
@@ -83,18 +81,15 @@ def delete_contact(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    contact = (
-        db.query(Contact)
-        .filter(
+    contact = db.query(Contact).filter(
             Contact.id_contact == id_contact,
             Contact.id_user == current_user.id_user
-        )
-        .first()
-    )
+        ).first()
 
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
 
     db.delete(contact)
     db.commit()
+
     return {"detail": "Contact deleted"}

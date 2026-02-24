@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.dependencies import get_current_user
 from app.db.database import SessionLocal
 from app.models.reminder import Reminder
 from app.models.user import User
@@ -26,32 +27,27 @@ def get_db():
 @router.post("/", response_model=ReminderResponse)
 def create_reminder(
     data: ReminderCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    user = db.query(User).filter(User.id_user == data.id_user).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    if data.id_contact:
+        contact = db.query(Contact).filter(
+            Contact.id_contact == data.id_contact,
+            Contact.id_user == current_user.id_user
+        ).first()
 
-    if data.id_contact is not None:
-        contact = (
-            db.query(Contact)
-            .filter(Contact.id_contact == data.id_contact)
-            .first()
-        )
         if not contact:
-            raise HTTPException(status_code=404, detail="Contact not found")
+            raise HTTPException(400, "Contacto inválido")
 
-    payload = data.dict()
-    
-    if payload["id_contact"] == 0:
-        payload["id_contact"] = None
+    new_reminder = Reminder(
+        **data.dict()
+    )
 
-    reminder = Reminder(**payload)
-    db.add(reminder)
+    db.add(new_reminder)
     db.commit()
-    db.refresh(reminder)
+    db.refresh(new_reminder)
 
-    return reminder
+    return new_reminder
 
 @router.get(
     "/user/{id_user}",

@@ -7,7 +7,7 @@ class Reminder(Base):
 
     id_reminder = Column(Integer, primary_key=True, index=True)
 
-    id_user = Column(Integer, ForeignKey("users.id_user"))
+    id_user = Column(Integer, ForeignKey("users.id_user"), nullable = False)
     id_contact = Column(Integer, ForeignKey("contact.id_contact"), nullable=True)
 
     # Relationships
