@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import date
 from typing import Optional
 
@@ -40,7 +40,7 @@ class ClinicalHistoryCreate(BaseModel):
     average_ovulation: Optional[int] = None
 
     sexually_active: Optional[bool] = None
-    miscarriages_abortions: Optional[int] = None
+    miscarriages_abortions: int = Field(ge=0, le=20)
 
 class ClinicalHistoryUpdate(ClinicalHistoryCreate):
     pass

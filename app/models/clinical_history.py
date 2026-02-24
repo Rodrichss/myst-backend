@@ -7,11 +7,11 @@ class ClinicalHistory(Base):
 
     id_history = Column(Integer, primary_key=True, index=True)
     id_user = Column(
-    Integer,
-    ForeignKey("users.id_user"),
-    nullable=False,
-    unique=True
-)
+        Integer,
+        ForeignKey("users.id_user"),
+        nullable=False,
+        unique=True
+    )
 
     # Relationship to User
     user = relationship("User", back_populates="clinical_history")
@@ -59,7 +59,7 @@ class ClinicalHistory(Base):
     average_ovulation = Column(Integer, nullable=True)
 
     sexually_active = Column(Boolean, nullable=True)
-    miscarriages_abortions = Column(Integer, nullable=True)
+    miscarriages_abortions = Column(Integer, nullable=False, default=0)
 
     # Relationships
     cycles = relationship(
