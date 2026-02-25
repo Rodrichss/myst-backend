@@ -35,20 +35,47 @@ def create_contact(
 
     return contact
 
-# List my contacts (private)
-@router.get("/", response_model=list[ContactResponse])
-def list_my_contacts(
+# Get my contacts (private)
+@router.get("/me", response_model=list[ContactResponse])
+def get_my_contacts(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return db.query(Contact).filter(
-        Contact.id_user == current_user.id_user
-    ).all()
+    contacts = (
+        db.query(Contact)
+        .filter(Contact.id_user == current_user.id_user)
+        .all()
+    )
 
+    return contacts
+
+# Get one of my contacts (private)
+@router.get("/me/{id_contact}", response_model=ContactResponse)
+def get_my_contact(
+    id_contact: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    contact = (
+        db.query(Contact)
+        .filter(
+            Contact.id_contact == id_contact,
+            Contact.id_user == current_user.id_user
+        )
+        .first()
+    )
+
+    if not contact:
+        raise HTTPException(
+            status_code=404,
+            detail="Contact not found"
+        )
+
+    return contact
 
 # Update my contact (private)
-@router.patch("/{id_contact}", response_model=ContactResponse)
-def update_contact(
+@router.patch("/me/{id_contact}", response_model=ContactResponse)
+def update_my_contact(
     id_contact: int,
     data: ContactUpdate,
     db: Session = Depends(get_db),
@@ -64,30 +91,41 @@ def update_contact(
     )
 
     if not contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Contact not found"
+        )
 
     for key, value in data.dict(exclude_unset=True).items():
         setattr(contact, key, value)
 
     db.commit()
     db.refresh(contact)
+
     return contact
 
 
 # Delete my contact (private)
-@router.delete("/{id_contact}")
-def delete_contact(
+@router.delete("/me/{id_contact}")
+def delete_my_contact(
     id_contact: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    contact = db.query(Contact).filter(
+    contact = (
+        db.query(Contact)
+        .filter(
             Contact.id_contact == id_contact,
             Contact.id_user == current_user.id_user
-        ).first()
+        )
+        .first()
+    )
 
     if not contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Contact not found"
+        )
 
     db.delete(contact)
     db.commit()
