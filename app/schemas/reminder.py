@@ -3,7 +3,6 @@ import datetime
 from typing import Optional
 
 class ReminderCreate(BaseModel):
-    id_user: int
     id_contact: Optional[int] = None
 
     title: str
@@ -17,6 +16,8 @@ class ReminderCreate(BaseModel):
     priority: Optional[str] = None
 
 class ReminderUpdate(BaseModel):
+    id_contact: Optional[int] = None
+
     title: Optional[str] = None
     description: Optional[str] = None
 
@@ -31,6 +32,19 @@ class ReminderUpdate(BaseModel):
 
 class ReminderResponse(ReminderCreate):
     id_reminder: int
+    title: str
+    description: Optional[str]
+
+    date: datetime.date
+    time: datetime.time
+
+    repeats: Optional[str]
+    type: Optional[str]
+    priority: Optional[str]
+
+    id_user: int
+    id_contact: Optional[int]
+
     is_completed: bool
 
     class Config:

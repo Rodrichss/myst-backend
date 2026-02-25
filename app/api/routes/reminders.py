@@ -24,63 +24,107 @@ def get_db():
     finally:
         db.close()
 
+# Create reminder (private)
 @router.post("/", response_model=ReminderResponse)
 def create_reminder(
     data: ReminderCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if data.id_contact:
-        contact = db.query(Contact).filter(
-            Contact.id_contact == data.id_contact,
-            Contact.id_user == current_user.id_user
-        ).first()
+    # validar contacto solo si viene
+    if data.id_contact is not None:
+        contact = (
+            db.query(Contact)
+            .filter(
+                Contact.id_contact == data.id_contact,
+                Contact.id_user == current_user.id_user
+            )
+            .first()
+        )
 
         if not contact:
-            raise HTTPException(400, "Contacto inválido")
+            raise HTTPException(400, "Invalid contact")
 
-    new_reminder = Reminder(
-        **data.dict()
+    reminder = Reminder(
+        **data.dict(exclude={"id_user"}),
+        id_user=current_user.id_user
     )
 
-    db.add(new_reminder)
+    db.add(reminder)
     db.commit()
-    db.refresh(new_reminder)
+    db.refresh(reminder)
 
-    return new_reminder
+    return reminder
 
-@router.get(
-    "/user/{id_user}",
-    response_model=list[ReminderResponse]
-)
-def get_reminders_by_user(
-    id_user: int,
-    db: Session = Depends(get_db)
+# Get my reminders (private)
+@router.get("/me", response_model=list[ReminderResponse])
+def get_my_reminders(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    return (
+    reminders = (
         db.query(Reminder)
-        .filter(Reminder.id_user == id_user)
+        .filter(Reminder.id_user == current_user.id_user)
         .order_by(Reminder.date, Reminder.time)
         .all()
     )
 
-@router.patch(
-    "/{id_reminder}",
-    response_model=ReminderResponse
-)
-def update_reminder(
+    return reminders
+
+# Get one of my reminders (private)
+@router.get("/me/{id_reminder}", response_model=ReminderResponse)
+def get_my_reminder(
     id_reminder: int,
-    data: ReminderUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     reminder = (
         db.query(Reminder)
-        .filter(Reminder.id_reminder == id_reminder)
+        .filter(
+            Reminder.id_reminder == id_reminder,
+            Reminder.id_user == current_user.id_user
+        )
         .first()
     )
 
     if not reminder:
-        raise HTTPException(status_code=404, detail="Reminder not found")
+        raise HTTPException(404, "Reminder not found")
+
+    return reminder
+
+# Update my reminder (private)
+@router.patch("/me/{id_reminder}", response_model=ReminderResponse)
+def update_my_reminder(
+    id_reminder: int,
+    data: ReminderUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    reminder = (
+        db.query(Reminder)
+        .filter(
+            Reminder.id_reminder == id_reminder,
+            Reminder.id_user == current_user.id_user
+        )
+        .first()
+    )
+
+    if not reminder:
+        raise HTTPException(404, "Reminder not found")
+
+    # validar contacto si se intenta cambiar
+    if data.id_contact is not None:
+        contact = (
+            db.query(Contact)
+            .filter(
+                Contact.id_contact == data.id_contact,
+                Contact.id_user == current_user.id_user
+            )
+            .first()
+        )
+
+        if not contact:
+            raise HTTPException(400, "Invalid contact")
 
     for key, value in data.dict(exclude_unset=True).items():
         setattr(reminder, key, value)
@@ -90,15 +134,26 @@ def update_reminder(
 
     return reminder
 
-@router.delete("/{id_reminder}")
-def delete_reminder(
+# Delete my reminder (private)
+@router.delete("/me/{id_reminder}")
+def delete_my_reminder(
     id_reminder: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    reminder = db.query(Reminder).filter(Reminder.id_reminder == id_reminder).first()
+    reminder = (
+        db.query(Reminder)
+        .filter(
+            Reminder.id_reminder == id_reminder,
+            Reminder.id_user == current_user.id_user
+        )
+        .first()
+    )
+
     if not reminder:
-        raise HTTPException(status_code=404, detail="Reminder not found")
+        raise HTTPException(404, "Reminder not found")
 
     db.delete(reminder)
     db.commit()
+
     return {"detail": "Reminder deleted"}
