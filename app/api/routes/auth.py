@@ -9,9 +9,10 @@ from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.models.password_reset import PasswordResetToken
 from app.models.user import User
-from app.schemas.auth import ResetPasswordRequest, Token, ForgotPasswordRequest
+from app.schemas.auth import Token, ForgotPasswordRequest
 from app.services.email_service import send_reset_password_email
 from app.core.security import hash_password, verify_password, create_access_token
+from app.core.password_validation import validate_password_strength
 
 router = APIRouter(
     prefix="/auth",
@@ -104,6 +105,7 @@ def reset_password(
     new_password: str = Form(...),
     db: Session = Depends(get_db)
 ):
+    validate_password_strength(new_password)
 
     # Buscar el token en la base de datos
     reset = db.query(PasswordResetToken).filter(
