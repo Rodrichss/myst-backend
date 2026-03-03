@@ -1,77 +1,123 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.db.database import SessionLocal
-from app.models.cycle import Cycle
-from app.models.clinical_history import ClinicalHistory
-from app.schemas.cycle import CycleCreate, CycleUpdate, CycleResponse
+from app.core.dependencies import get_current_user, get_db
 
+from app.models.user import User
+from app.models.clinical_history import ClinicalHistory
+from app.models.cycle import Cycle
+from app.schemas.cycle import (
+    CycleCreate,
+    CycleUpdate,
+    CycleResponse
+)
 
 router = APIRouter(
     prefix="/cycles",
     tags=["Cycles"]
 )
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-@router.post("/", response_model=CycleResponse)
-def create_cycle(
-    data: CycleCreate,
-    db: Session = Depends(get_db)
+# validate clinical history exists for user, if not create it
+def get_or_create_clinical_history(
+    db: Session,
+    current_user: User
 ):
     history = (
         db.query(ClinicalHistory)
-        .filter(ClinicalHistory.id_history == data.id_history)
+        .filter(ClinicalHistory.id_user == current_user.id_user)
         .first()
     )
 
-    if not history:
-        raise HTTPException(status_code=404, detail="Clinical history not found")
+    if history:
+        return history
 
-    cycle = Cycle(**data.dict())
+    history = ClinicalHistory(
+        id_user=current_user.id_user
+    )
+
+    db.add(history)
+    db.commit()
+    db.refresh(history)
+
+    return history
+
+# Create cycle entry (private)
+@router.post("/", response_model=CycleResponse)
+def create_cycle(
+    data: CycleCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    history = get_or_create_clinical_history(db, current_user)
+
+    cycle = Cycle(
+        **data.dict(),
+        id_history=history.id_history
+    )
+
     db.add(cycle)
     db.commit()
     db.refresh(cycle)
 
     return cycle
 
-@router.get(
-    "/history/{id_history}",
-    response_model=list[CycleResponse]
-)
-def get_cycles_by_history(
-    id_history: int,
-    db: Session = Depends(get_db)
+# get my cycles (private)
+@router.get("/me", response_model=list[CycleResponse])
+def get_my_cycles(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    return (
+    history = (
+        db.query(ClinicalHistory)
+        .filter(ClinicalHistory.id_user == current_user.id_user)
+        .first()
+    )
+
+    if not history:
+        return []
+
+    cycles = (
         db.query(Cycle)
-        .filter(Cycle.id_history == id_history)
-        .order_by(Cycle.period_start_date.desc())
+        .filter(Cycle.id_history == history.id_history)
         .all()
     )
 
-@router.patch(
-    "/{id_cycle_entry}",
-    response_model=CycleResponse
-)
-def update_cycle(
-    id_cycle_entry: int,
+    return cycles
+
+# update cycle entry (private)
+@router.patch("/{cycle_id}", response_model=CycleResponse)
+def update_my_cycle(
+    cycle_id: int,
     data: CycleUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
+    history = (
+        db.query(ClinicalHistory)
+        .filter(ClinicalHistory.id_user == current_user.id_user)
+        .first()
+    )
+
+    if not history:
+        raise HTTPException(
+            status_code=404,
+            detail="Clinical history not found"
+        )
+
     cycle = (
         db.query(Cycle)
-        .filter(Cycle.id_cycle_entry == id_cycle_entry)
+        .filter(
+            Cycle.id_cycle_entry == cycle_id,
+            Cycle.id_history == history.id_history
+        )
         .first()
     )
 
     if not cycle:
-        raise HTTPException(status_code=404, detail="Cycle not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Cycle not found"
+        )
 
     for key, value in data.dict(exclude_unset=True).items():
         setattr(cycle, key, value)
@@ -80,3 +126,42 @@ def update_cycle(
     db.refresh(cycle)
 
     return cycle
+
+# delete cycle entry (private)
+@router.delete("/{cycle_id}")
+def delete_my_cycle(
+    cycle_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    history = (
+        db.query(ClinicalHistory)
+        .filter(ClinicalHistory.id_user == current_user.id_user)
+        .first()
+    )
+
+    if not history:
+        raise HTTPException(
+            status_code=404,
+            detail="Clinical history not found"
+        )
+
+    cycle = (
+        db.query(Cycle)
+        .filter(
+            Cycle.id_cycle_entry == cycle_id,
+            Cycle.id_history == history.id_history
+        )
+        .first()
+    )
+
+    if not cycle:
+        raise HTTPException(
+            status_code=404,
+            detail="Cycle not found"
+        )
+
+    db.delete(cycle)
+    db.commit()
+
+    return {"message": "Cycle deleted successfully"}

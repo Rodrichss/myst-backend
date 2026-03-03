@@ -3,8 +3,6 @@ from datetime import date, time
 from typing import Optional
 
 class CycleCreate(BaseModel):
-    id_history: int
-
     weight: Optional[float] = None
     height: Optional[float] = None
     waist_circumference: Optional[float] = None

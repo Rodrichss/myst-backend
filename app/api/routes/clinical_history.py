@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.security import hash_password
 from app.core.dependencies import get_current_user, get_db
 
 from app.models.user import User
@@ -36,7 +35,7 @@ def create_clinical_history(
         )
 
     history = ClinicalHistory(
-        **data.dict(), 
+        **data.dict(),
         id_user=current_user.id_user
     )
 
