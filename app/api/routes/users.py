@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.security import hash_password, generate_verification_token
+from app.core.security import hash_password, generate_verification_token, verify_password
 from app.core.dependencies import get_current_user, get_db
 
 from app.services.email_service import send_verification_email
@@ -9,6 +9,7 @@ from app.services.email_service import send_verification_email
 from app.models.user import User
 from app.schemas.user import (
     UserCreate,
+    UserDelete,
     UserUpdate,
     UserResponse
 )
@@ -96,3 +97,21 @@ def list_users(
     current_user: User = Depends(get_current_user)
 ):
     return db.query(User).all()
+
+# Delete user (private)
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_me(
+    data: UserDelete,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not verify_password(data.password, current_user.password):
+        raise HTTPException(
+            status_code=400,
+            detail="Incorrect password"
+        )
+
+    db.delete(current_user)
+    db.commit()
+
+    return

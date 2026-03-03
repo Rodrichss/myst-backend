@@ -28,3 +28,11 @@ class UserUpdate(BaseModel):
     name: Optional[str] = None
     initials: Optional[str] = None
     picture: Optional[str] = None
+
+class UserDelete(BaseModel):
+    password: str
+
+    @field_validator('password')
+    def validate_password(cls, value: str):
+        validate_password_strength(value)
+        return value
