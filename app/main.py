@@ -10,7 +10,8 @@ from app.api.routes import (
     clinical_history,
     cycles,
     contacts,
-    reminders
+    reminders,
+    daily_log
 )
 
 # Create tables in the database (only for development)
@@ -30,6 +31,7 @@ app.include_router(clinical_history.router)
 app.include_router(cycles.router)
 app.include_router(contacts.router)
 app.include_router(reminders.router)
+app.include_router(daily_log.router)
 
 @app.get("/")
 def root():
