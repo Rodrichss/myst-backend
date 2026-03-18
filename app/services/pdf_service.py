@@ -1,3 +1,4 @@
+"""
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Image
 from reportlab.lib.styles import getSampleStyleSheet
 import tempfile
@@ -63,3 +64,4 @@ def generate_full_clinical_pdf(data, chart_path=None):
     doc.build(elements)
 
     return file.name
+"""

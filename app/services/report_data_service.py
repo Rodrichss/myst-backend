@@ -1,3 +1,4 @@
+"""
 from app.api.routes.cycles import get_or_create_clinical_history
 from app.models.cycle import Cycle
 
@@ -17,3 +18,4 @@ def get_full_clinical_report(db, user):
         "cycles": cycles,
         "last_cycle": last_cycle
     }
+"""

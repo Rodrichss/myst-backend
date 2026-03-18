@@ -1,3 +1,4 @@
+"""
 import matplotlib.pyplot as plt
 import tempfile
 
@@ -16,3 +17,4 @@ def stress_chart(cycles):
     plt.close()
 
     return tmp.name
+"""

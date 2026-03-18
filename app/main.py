@@ -5,6 +5,8 @@ from app.db.base import Base
 
 # Import routes
 from app.api.routes import (
+    assistant,
+    reports,
     users,
     auth,
     clinical_history,
@@ -31,11 +33,13 @@ app = FastAPI(
 # Include routers
 app.include_router(users.router)
 app.include_router(auth.router)
-app.include_router(clinical_history.router)
-app.include_router(cycles.router)
 app.include_router(contacts.router)
 app.include_router(reminders.router)
+app.include_router(clinical_history.router)
+app.include_router(cycles.router)
 app.include_router(daily_log.router)
+app.include_router(assistant.router)
+#app.include_router(reports.router)
 
 @app.get("/")
 def root():
