@@ -122,7 +122,13 @@ def predict_my_next_cycle(
 
     predicted_date = start_dates[-1] + timedelta(days=int(predicted_length))
 
+    predicted_range = cycle_predictor.predict_with_range(
+        cycles = cycle_lengths,
+        last_period_date=cycles[-1].start_date
+    )
+
     return {
         "predicted_cycle_length": predicted_length,
-        "predicted_next_period": predicted_date
+        "predicted_next_period": predicted_date,
+        "predicted_cycle_range": predicted_range
     }
