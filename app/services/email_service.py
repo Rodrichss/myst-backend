@@ -1,13 +1,12 @@
-import smtplib
-from email.mime.text import MIMEText
-from app.core.config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, FRONTEND_URL
+import requests
+from app.core.config import SENDGRID_API_KEY, SMTP_USER, BACKEND_URL
 
 color_primary = "#4F338A"
 color_secondary = "#8270AA"
 color_background = "#ECECEC"
 
 def send_verification_email(to_email: str, token: str):
-    verification_link = f"{FRONTEND_URL}/auth/verify-email?token={token}"
+    verification_link = f"{BACKEND_URL}/auth/verify-email?token={token}"
 
     subject = "Verifica tu cuenta"
     body = f"""
@@ -63,19 +62,30 @@ def send_verification_email(to_email: str, token: str):
 </html>
 """
 
-    msg = MIMEText(body, "html")
-    msg["Subject"] = subject
-    msg["From"] = f"Myst <{SMTP_USER}>"
-    msg["To"] = to_email
+    response = requests.post(
+        "https://api.sendgrid.com/v3/mail/send",
+        headers={
+            "Authorization": f"Bearer {SENDGRID_API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "from": {"email": SMTP_USER, "name": "Myst"},
+            "personalizations": [
+                {
+                    "to": [{"email": to_email}],
+                    "subject": subject,
+                    "html": body
+                }
+            ]
+        }
+    )
+    if response.status_code >= 400:
+        raise Exception(f"Error enviando correo: {response.text}")
 
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        server.send_message(msg)
 
 def send_reset_password_email(to_email: str, token: str):
 
-    reset_link = f"{FRONTEND_URL}/auth/reset-password?token={token}"
+    reset_link = f"{BACKEND_URL}/auth/reset-password?token={token}"
 
     subject = "Restablece tu contraseña"
     body = f"""
@@ -134,12 +144,22 @@ def send_reset_password_email(to_email: str, token: str):
 </html>
 """
 
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = f"Myst <{SMTP_USER}>"
-    msg["To"] = to_email
-
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        server.send_message(msg)
+    response = requests.post(
+        "https://api.sendgrid.com/v3/mail/send",
+        headers={
+            "Authorization": f"Bearer {SENDGRID_API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "from": {"email": SMTP_USER, "name": "Myst"},
+            "personalizations": [
+                {
+                    "to": [{"email": to_email}],
+                    "subject": subject,
+                    "html": body
+                }
+            ]
+        }
+    )
+    if response.status_code >= 400:
+        raise Exception(f"Error enviando correo: {response.text}")
