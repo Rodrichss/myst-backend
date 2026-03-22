@@ -35,7 +35,7 @@ def create_user(
 
     hashed_password = hash_password(data.password)
     token = generate_verification_token()
-
+    # Create user
     user = User(
         name=data.name,
         email=data.email,
@@ -45,12 +45,17 @@ def create_user(
         verification_token=token,
         is_verified=False
     )
-
     db.add(user)
     db.commit()
     db.refresh(user)
 
-    send_verification_email(user.email, token)
+    try:
+        send_verification_email(user.email, token)
+    except Exception:
+        # manual rollback if email sending fails
+        db.delete(user)
+        db.commit()
+        raise HTTPException(status_code=500, detail="Error enviando correo de verificación")
 
     return user
 
