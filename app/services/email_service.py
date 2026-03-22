@@ -1,4 +1,6 @@
 import requests
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 from app.core.config import SENDGRID_API_KEY, SMTP_USER, BACKEND_URL
 
 color_primary = "#4F338A"
@@ -62,25 +64,24 @@ def send_verification_email(to_email: str, token: str):
 </html>
 """
 
-    response = requests.post(
-        "https://api.sendgrid.com/v3/mail/send",
-        headers={
-            "Authorization": f"Bearer {SENDGRID_API_KEY}",
-            "Content-Type": "application/json"
-        },
-        json={
-            "from": {"email": SMTP_USER, "name": "Myst"},
-            "personalizations": [
-                {
-                    "to": [{"email": to_email}],
-                    "subject": subject,
-                    "html": body
-                }
-            ]
-        }
+    message = Mail(
+        from_email=(SMTP_USER, "Myst"),
+        to_emails=to_email,
+        subject=subject,
+        html_content=body
     )
-    if response.status_code >= 400:
-        raise Exception(f"Error enviando correo: {response.text}")
+    try:
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+
+        print("STATUS:", response.status_code)
+
+        if response.status_code >= 400:
+            raise Exception(f"SendGrid error: {response.body}")
+
+    except Exception as e:
+        print("Error enviando correo:", str(e))
+        raise
 
 
 def send_reset_password_email(to_email: str, token: str):
@@ -144,22 +145,21 @@ def send_reset_password_email(to_email: str, token: str):
 </html>
 """
 
-    response = requests.post(
-        "https://api.sendgrid.com/v3/mail/send",
-        headers={
-            "Authorization": f"Bearer {SENDGRID_API_KEY}",
-            "Content-Type": "application/json"
-        },
-        json={
-            "from": {"email": SMTP_USER, "name": "Myst"},
-            "personalizations": [
-                {
-                    "to": [{"email": to_email}],
-                    "subject": subject,
-                    "html": body
-                }
-            ]
-        }
+    message = Mail(
+        from_email=(SMTP_USER, "Myst"),
+        to_emails=to_email,
+        subject=subject,
+        html_content=body
     )
-    if response.status_code >= 400:
-        raise Exception(f"Error enviando correo: {response.text}")
+    try:
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+
+        print("STATUS:", response.status_code)
+
+        if response.status_code >= 400:
+            raise Exception(f"SendGrid error: {response.body}")
+
+    except Exception as e:
+        print("Error enviando correo:", str(e))
+        raise
