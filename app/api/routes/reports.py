@@ -1,4 +1,3 @@
-"""
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -30,4 +29,3 @@ def download_full_report(
         media_type="application/pdf",
         filename="clinical_report.pdf"
     )
-"""

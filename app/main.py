@@ -39,7 +39,7 @@ app.include_router(clinical_history.router)
 app.include_router(cycles.router)
 app.include_router(daily_log.router)
 app.include_router(assistant.router)
-#app.include_router(reports.router)
+app.include_router(reports.router)
 
 @app.get("/")
 def root():

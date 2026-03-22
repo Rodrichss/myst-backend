@@ -1,14 +1,23 @@
-"""
 import matplotlib.pyplot as plt
 import tempfile
 
 def stress_chart(cycles):
-    dates = [c.period_start_date for c in cycles if c.stress]
-    stress = [c.stress for c in cycles if c.stress]
+    dates = []
+    stress_values = []
+
+    for cycle in cycles:
+        for log in cycle.daily_logs:
+            if log.stress is not None:
+                dates.append(log.date)
+                stress_values.append(log.stress)
+
+    # Ordenar por fecha (muy importante)
+    combined = sorted(zip(dates, stress_values), key=lambda x: x[0])
+    dates, stress_values = zip(*combined) if combined else ([], [])
 
     plt.figure()
-    plt.plot(dates, stress)
-    plt.title("Nivel de estrés por ciclo")
+    plt.plot(dates, stress_values)
+    plt.title("Nivel de estrés diario")
     plt.xlabel("Fecha")
     plt.ylabel("Estrés")
 
@@ -17,4 +26,3 @@ def stress_chart(cycles):
     plt.close()
 
     return tmp.name
-"""

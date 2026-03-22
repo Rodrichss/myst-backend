@@ -1,4 +1,3 @@
-"""
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Image
 from reportlab.lib.styles import getSampleStyleSheet
 import tempfile
@@ -25,9 +24,9 @@ def generate_full_clinical_pdf(data, chart_path=None):
     general_data = [
         ["Campo", "Valor"],
         ["Nombre", user.name],
-        ["Apellido", user.last_name],
-        ["Fecha nacimiento", str(user.birth_date)],
-        ["Sexo biológico", history.biological_sex]
+        ["Apellido", history.last_name],
+        ["Fecha nacimiento", str(history.birthdate)],
+        ["Sexo biológico", history.sex_biology]
     ]
 
     table = Table(general_data)
@@ -40,17 +39,37 @@ def generate_full_clinical_pdf(data, chart_path=None):
     # ÚLTIMO CICLO
     # -------------------------
     if last_cycle:
+        elements.append(Paragraph("Último ciclo menstrual", styles["Heading2"]))
+
         cycle_data = [
             ["Campo", "Valor"],
-            ["Estrés", last_cycle.stress],
-            ["Ansiedad", last_cycle.anxiety],
-            ["Calambres", last_cycle.cramps],
-            ["Inicio periodo", str(last_cycle.period_start_date)],
-            ["Fin periodo", str(last_cycle.period_end_date)]
+            ["Inicio periodo", str(last_cycle.start_date)],
+            ["Fin periodo", str(last_cycle.end_date)]
         ]
 
-        elements.append(Paragraph("Último ciclo menstrual", styles["Heading2"]))
         elements.append(Table(cycle_data))
+        elements.append(Spacer(1, 15))
+
+        # -------------------------
+        # DAILY LOGS
+        # -------------------------
+        logs = last_cycle.daily_logs
+
+        if logs:
+            elements.append(Paragraph("Registros diarios del último ciclo", styles["Heading3"]))
+
+            log_table = [["Fecha", "Estrés", "Ansiedad", "Calambres", "Estado de ánimo"]]
+
+            for log in logs:
+                log_table.append([
+                    str(log.date),
+                    str(log.stress),
+                    str(log.anxiety),
+                    str(log.cramps),
+                    log.mood
+                ])
+
+            elements.append(Table(log_table))
 
     elements.append(Spacer(1, 20))
 
@@ -64,4 +83,3 @@ def generate_full_clinical_pdf(data, chart_path=None):
     doc.build(elements)
 
     return file.name
-"""
