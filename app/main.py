@@ -21,7 +21,7 @@ from app.services.cycle_predictor_service import CyclePredictor
 cycle_predictor = CyclePredictor("app/ml/myst_cycle_predictor.pkl")
 
 # Create tables in the database (only for development)
-#Base.metadata.create_all(bind=engine) # descomentar para crear las tablas en la base de datos
+Base.metadata.create_all(bind=engine) # descomentar para crear las tablas en la base de datos
 # GRANT ALL ON SCHEMA public TO myst_user; (sql)
 
 app = FastAPI(
