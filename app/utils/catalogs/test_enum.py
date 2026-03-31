@@ -1,3 +1,4 @@
+from app.utils.base_normalizer import normalize_text
 class TestEnum:
     NEGATIVE = 0
     POSITIVE = 1
@@ -9,4 +10,8 @@ class TestEnum:
         1: "Positivo",
         2: "Indeterminado",
         3: "No realizada"
+    }
+
+    REVERSE_MAP = {
+        normalize_text(v): k for k, v in MAP.items()
     }

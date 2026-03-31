@@ -1,3 +1,5 @@
+from app.utils.base_normalizer import normalize_text
+
 class ScaleEnum:
     NONE = 0
     LOW = 1
@@ -11,4 +13,8 @@ class ScaleEnum:
         2: "Moderado",
         3: "Alto",
         4: "Muy alto"
+    }
+
+    REVERSE_MAP = {
+        normalize_text(v): k for k, v in MAP.items()
     }

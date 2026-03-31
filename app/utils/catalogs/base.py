@@ -7,6 +7,12 @@ class BaseCatalog:
         return cls.MAP.get(value)
 
     @classmethod
+    def get_value(cls, label):
+        if not label:
+            return None
+        return cls.__get_reverse_map().get(label.lower())
+
+    @classmethod
     def is_valid(cls, value):
         return value in cls.MAP
 
@@ -24,3 +30,9 @@ class BaseCatalog:
     @classmethod
     def deserialize(cls, value: str) -> list[str]:
         return value.split(",") if value else []
+
+    @classmethod
+    def __get_reverse_map(cls):
+        if not hasattr(cls, "_reverse_map"):
+            cls._reverse_map = {v.lower(): k for k, v in cls.MAP.items()}
+        return cls._reverse_map
