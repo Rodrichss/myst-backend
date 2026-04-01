@@ -9,20 +9,32 @@ client = genai.Client(
 
 def analyze_daily_message(message: str):
     prompt = f"""
-You are a health assistant.
+You are a health assistant specialized in menstrual tracking.
 
-Extract symptoms and health indicators from the user's message.
+Analyze the user message and extract structured data.
 
-Return ONLY a JSON object with these possible fields:
+Return ONLY a valid JSON object.
 
-stress (0-10)
-anxiety (0-10)
-mood (0-10)
-cramps (0-10)
-cravings (0 or 1)
-symptoms (string)
+Fields:
 
-If something is not mentioned, do not include it.
+intent: one of ["log_symptoms", "start_period", "end_period"]
+
+stress: integer (0-10)
+anxiety: integer (0-10)
+mood: integer (0-10)
+cramps: integer (0-10)
+cravings: 0 or 1
+
+symptoms: array of strings (e.g. ["cramps", "headache", "fatigue"])
+
+Rules:
+
+- "me bajó", "empezó mi periodo" → intent = "start_period"
+- "terminó mi periodo" → intent = "end_period"
+- Symptoms must be normalized to simple English words
+- DO NOT include events inside symptoms
+- If something is not mentioned, omit it
+
 
 User message:
 {message}
