@@ -53,7 +53,7 @@ def delete_my_cycle(
     cycle = (
         db.query(Cycle)
         .filter(
-            Cycle.id_cycle_entry == cycle_id,
+            Cycle.id_cycle == cycle_id,
             Cycle.id_history == history.id_history
         )
         .first()
@@ -132,3 +132,4 @@ def predict_my_next_cycle(
         "predicted_next_period": predicted_date,
         "predicted_cycle_range": predicted_range
     }
+
