@@ -46,10 +46,6 @@ Configura tu archivo .env:
 
 DATABASE_URL=postgresql://myst_user:TU_PASSWORD@localhost:5432/myst_db
 
-Ejecutar prueba de conexión
-
-python test_db.py
-
 Ejecutar el backend
 
 uvicorn main:app --reload
