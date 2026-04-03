@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_db
 from app.models.user import User
-from app.services.chart_service import stress_chart
+from app.services.chart_service import generate_cycle_charts
 from app.services.pdf_service import generate_full_clinical_pdf
 from app.services.report_data_service import get_full_clinical_report
 
@@ -20,9 +20,9 @@ def download_full_report(
 ):
     data = get_full_clinical_report(db, current_user)
 
-    chart = stress_chart(data["cycles"])
+    charts = generate_cycle_charts(data["last_cycle"])
 
-    pdf_path = generate_full_clinical_pdf(data, chart)
+    pdf_path = generate_full_clinical_pdf(data, charts)
 
     return FileResponse(
         pdf_path,
