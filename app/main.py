@@ -13,7 +13,8 @@ from app.api.routes import (
     cycles,
     contacts,
     reminders,
-    daily_log
+    daily_log,
+    database
 )
 
 from app.services.cycle_predictor_service import CyclePredictor
@@ -40,6 +41,7 @@ app.include_router(cycles.router)
 app.include_router(daily_log.router)
 app.include_router(assistant.router)
 app.include_router(reports.router)
+app.include_router(database.router)
 
 @app.get("/")
 def root():
