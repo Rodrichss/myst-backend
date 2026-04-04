@@ -133,8 +133,8 @@ def predict_my_next_cycle(
         "predicted_cycle_range": predicted_range
     }
 
-@router.post("/fix-order")
-def fix_cycle_order(
+@router.post("/fix-position")
+def fix_cycle_position(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -151,7 +151,7 @@ def fix_cycle_order(
         .all()
     )
     for i, cycle in enumerate(cycles, start=1):
-        cycle.order = i
+        cycle.position = i
 
     db.commit()
     return {"fixed": len(cycles)}

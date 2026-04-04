@@ -12,7 +12,7 @@ class Cycle(Base):
 
     # Order within the history (1 = first cycle, 2 = second, etc.)
     # Useful for PDFs and sorting without relying on dates alone
-    order = Column(Integer, nullable=True)
+    position = Column(Integer, nullable=True)
 
     # Dates
     start_date = Column(Date, nullable=True)

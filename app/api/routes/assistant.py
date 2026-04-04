@@ -38,17 +38,17 @@ def _get_or_create_history(db: Session, user_id: int) -> ClinicalHistory:
     return history
  
  
-def _get_next_cycle_order(db: Session, id_history: int) -> int:
+def _get_next_cycle_position(db: Session, id_history: int) -> int:
     """Devuelve el siguiente número de orden para un ciclo nuevo."""
     last = (
         db.query(Cycle)
         .filter(Cycle.id_history == id_history)
-        .order_by(Cycle.order.desc().nullslast())
+        .order_by(Cycle.position.desc().nullslast())
         .first()
     )
-    if last and last.order is not None:
-        return last.order + 1
-    # Si hay ciclos sin order, contar todos
+    if last and last.position is not None:
+        return last.position + 1
+    # Si hay ciclos sin position, contar todos
     count = db.query(Cycle).filter(Cycle.id_history == id_history).count()
     return count + 1
 
@@ -109,7 +109,7 @@ def log_day_from_chat(
         new_cycle = Cycle(
             id_history=history.id_history,
             start_date=event_date,
-            order=_get_next_cycle_order(db, history.id_history)
+            position=_get_next_cycle_position(db, history.id_history)
         )
         db.add(new_cycle)
         db.commit()
@@ -198,6 +198,6 @@ def log_day_from_chat(
         "intent": intent,
         "date": event_date.isoformat(),
         "cycle_id": cycle.id_cycle,
-        "cycle_order": cycle.order,
+        "cycle_position": cycle.position,
         "data_extracted": extracted,
     }
