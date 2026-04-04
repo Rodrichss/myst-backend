@@ -2,12 +2,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 from dotenv import load_dotenv
-import os
+from app.core.config import DATABASE_URL
 
 load_dotenv()
 
 engine = create_engine(
-    os.getenv("DATABASE_URL"),
+    DATABASE_URL,
     pool_pre_ping=True
 )
 
