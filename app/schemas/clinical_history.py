@@ -25,8 +25,8 @@ class ClinicalHistoryCreate(BaseModel):
 
     diabetes_mellitus: Optional[str] = None
     arterial_hypertension: Optional[bool] = None
-    sustance_use: Optional[str] = None
-    std: Optional[str] = None
+    sustance_use: Optional[str | list[str]] = None
+    std: Optional[str | list[str]] = None
 
     turner_syndrome_screening: Optional[bool] = None
 
