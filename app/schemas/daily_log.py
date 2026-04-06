@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import date, time
+from datetime import date as DateType, time
 
 class DailyLogBase(BaseModel):
-    date: date
+    date: DateType
 
     weight: Optional[float] = None
     height: Optional[float] = None
@@ -50,11 +50,45 @@ class DailyLogCreate(DailyLogBase):
 
 
 class DailyLogUpdate(BaseModel):
-    # todos opcionales
+    date: Optional[DateType] = None
+
     weight: Optional[float] = None
+    height: Optional[float] = None
+    waist_circumference: Optional[float] = None
+
+    systolic_bp: Optional[int] = None
+    diastolic_bp: Optional[int] = None
+    heart_rate: Optional[int] = None
+
+    body_temperature: Optional[float] = None
+    glycemia: Optional[float] = None
+
+    anticonceptive_use: Optional[bool] = None
+    anticonceptive_type: Optional[str] = None
+
+    sexual_penetration: Optional[bool] = None
+    on_fertile_window: Optional[bool] = None
+
     menstrual_flow: Optional[int] = None
+    vaginal_discharge: Optional[int] = None
+
     mood: Optional[int] = None
+    anxiety: Optional[int] = None
     stress: Optional[int] = None
+
+    sleep_time: Optional[time] = None
+    exercise: Optional[str] = None
+    exercise_time: Optional[time] = None
+    water_consumption: Optional[float] = None
+    hobbies_activities: Optional[str | list[str]] = None  # 🔥 importante
+
+    cramps: Optional[int] = None
+    cravings: Optional[int] = None
+    symptoms: Optional[str | list[str]] = None  # 🔥 importante
+
+    pregnancy_test: Optional[int] = None
+    ovulation_test: Optional[int] = None
+
     notes: Optional[str] = None
 
 
