@@ -10,6 +10,7 @@ from app.schemas.clinical_history import (
     ClinicalHistoryUpdate,
     ClinicalHistoryResponse
 )
+from app.services.data_normalizer_service import DataNormalizerService
 
 router = APIRouter(
     prefix="/clinical-history",
@@ -34,8 +35,12 @@ def create_clinical_history(
             detail="Clinical history already exists for this user"
         )
 
+    # normalizar
+    data_dict = data.dict(exclude_unset=True)
+    data_dict = DataNormalizerService.normalize_clinical_history(data_dict)
+
     history = ClinicalHistory(
-        **data.dict(),
+        **data_dict,
         id_user=current_user.id_user
     )
 
@@ -84,8 +89,25 @@ def update_my_clinical_history(
             detail="Clinical history not found"
         )
 
-    for key, value in data.dict(exclude_unset=True).items():
-        setattr(history, key, value)
+    original_data = data.dict(exclude_unset=True)
+    normalized_data = DataNormalizerService.normalize_clinical_history(original_data.copy())
+
+    for key in original_data:
+
+        original_value = original_data.get(key)
+        normalized_value = normalized_data.get(key)
+
+        # borrar explícitamente
+        if original_value is None:
+            setattr(history, key, None)
+
+        # válido
+        elif normalized_value is not None:
+            setattr(history, key, normalized_value)
+
+        # inválido → ignorar
+        else:
+            pass
 
     db.commit()
     db.refresh(history)
