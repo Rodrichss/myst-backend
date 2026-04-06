@@ -1,9 +1,9 @@
 from app.models.cycle import Cycle
 from app.services.clinical_history_service import get_or_create_clinical_history
 
-from app.utils.catalogs.diabetes_catalog import DiabetesCatalog
-from app.utils.catalogs.std_catalog import STDCatalog
-from app.utils.catalogs.substance_catalog import SubstanceCatalog
+from app.catalogs.diabetes_catalog import DiabetesCatalog
+from app.catalogs.std_catalog import STDCatalog
+from app.catalogs.substance_catalog import SubstanceCatalog
 
 def get_label_safe(catalog, value):
     return catalog.get_label(value) if value else "No especificado"
