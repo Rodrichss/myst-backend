@@ -19,7 +19,6 @@ from app.catalogs.scale_enum import ScaleEnum
 from app.catalogs.test_enum import TestEnum
 
 class DataNormalizerService:
-
     @staticmethod
     def normalize_daily_log(data: dict) -> dict:
         if not data:
@@ -86,6 +85,7 @@ class DataNormalizerService:
 
         return data
 
+    @staticmethod
     def normalize_clinical_history(data: dict) -> dict:
         if not data:
             return data
