@@ -49,7 +49,7 @@ def get_full_clinical_report(db, user):
 
     mapped_data = {
         "diabetes": get_label_safe(DiabetesCatalog, history.diabetes_mellitus),
-        "std": get_label_safe(STDCatalog, history.std),
+        "std": map_catalog_list(STDCatalog, history.std),
         "substances": map_catalog_list(SubstanceCatalog, history.sustance_use)
     }
 

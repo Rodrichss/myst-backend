@@ -1,14 +1,12 @@
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 import tempfile, os
-from datetime import datetime
 
-from app.assets.colors import PRIMARY, SECONDARY, LIGHT, DARK
 from app.assets.styles import section_title, sub_title, text
 
 from app.services.pdf.components.tables import styled_table, styled_table_multi
 from app.services.pdf.components.header import build_header
 from app.services.pdf.components.footer import header_footer
-from app.services.pdf.utils.formatters import bool_text, clean, format_abortions, format_list
+from app.services.pdf.utils.formatters import bool_text, clean, format_abortions, format_list, format_date, format_stds
 
 # enums
 from app.catalogs.scale_enum import ScaleEnum
@@ -52,7 +50,7 @@ def build_full_clinical_report_pdf(data, charts):
         ["¿Ha tenido o tiene algún diagnóstico de depresión?", bool_text(history.depression)],
         ["¿Le han diagnosticado síndrome de ovario poliquístico (PCOS)?", bool_text(history.pcos)],
         ["¿Tiene endometriosis?", bool_text(history.endometriosis)],
-        ["¿Ha tenido alguna infección o enfermedad de transmisión sexual (ETS)?", clean(mapped["std"])],
+        ["¿Ha tenido alguna infección o enfermedad de transmisión sexual (ETS)?", format_stds(mapped["std"])],
     ]
 
     elements.append(styled_table(clinical_table))
@@ -84,8 +82,8 @@ def build_full_clinical_report_pdf(data, charts):
         elements.append(Paragraph("Último ciclo menstrual", section_title))
 
         cycle_table = [
-            ["Fecha de inicio", str(last_cycle.start_date)],
-            ["Fecha de fin", str(last_cycle.end_date)]
+            ["Fecha de inicio", format_date(last_cycle.start_date)],
+            ["Fecha de fin", format_date(last_cycle.end_date)]
         ]
 
         elements.append(styled_table(cycle_table))
@@ -101,7 +99,7 @@ def build_full_clinical_report_pdf(data, charts):
 
             for log in logs[:10]: # mostrar solo los primeros 10 para no saturar el PDF
                 log_table.append([
-                    clean(log.date),
+                    format_date(log.date),
                     clean(ScaleEnum.MAP.get(log.stress)),
                     clean(MoodEnum.MAP.get(log.mood)),
                     clean(ScaleEnum.MAP.get(log.cramps)),

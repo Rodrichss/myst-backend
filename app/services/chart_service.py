@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import tempfile
@@ -55,7 +57,7 @@ def generate_cycle_charts(last_cycle):
         # Formatear para que solo muestre día/mes
         ax = plt.gca() # Obtener los ejes actuales
         ax.xaxis.set_major_locator(mdates.DayLocator())
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m'))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%y'))
 
         plt.title(title)
         plt.xlabel("Fecha")

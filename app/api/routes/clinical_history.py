@@ -89,26 +89,17 @@ def update_my_clinical_history(
             detail="Clinical history not found"
         )
 
-    original_data = data.dict(exclude_unset=True)
-    normalized_data = DataNormalizerService.normalize_clinical_history(original_data.copy())
+    update_data = data.model_dump(exclude_unset=True)
+    normalized_data = DataNormalizerService.normalize_clinical_history(update_data)
 
-    for key in original_data:
+    for key, value in normalized_data.items():
+        setattr(history, key, value)
 
-        original_value = original_data.get(key)
-        normalized_value = normalized_data.get(key)
+    try:
+        db.commit()
+        db.refresh(history)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Error updating database")
 
-        # borrar explícitamente
-        if original_value is None:
-            setattr(history, key, None)
-
-        # válido
-        elif normalized_value is not None:
-            setattr(history, key, normalized_value)
-
-        # inválido → ignorar
-        else:
-            pass
-
-    db.commit()
-    db.refresh(history)
     return history

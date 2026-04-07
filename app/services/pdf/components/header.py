@@ -1,7 +1,7 @@
 from reportlab.platypus import Paragraph, Spacer, Image, Table, TableStyle
 from datetime import datetime
 
-from app.services.pdf.utils.formatters import clean, format_full_name
+from app.services.pdf.utils.formatters import clean, format_date, format_full_name
 from app.assets.styles import title_style, style
 
 def build_header(title, user, history, logo_path=None):
@@ -15,8 +15,8 @@ def build_header(title, user, history, logo_path=None):
     ]
 
     right_info = [
-        Paragraph(f"<b>Fecha nacimiento:</b> {clean(history.birthdate)}", style),
-        Paragraph(f"<b>Fecha reporte:</b> {datetime.now().date()}", style),
+        Paragraph(f"<b>Fecha nacimiento:</b> {format_date(clean(history.birthdate))}", style),
+        Paragraph(f"<b>Fecha del reporte:</b> {format_date(datetime.now().date())}", style),
     ]
 
     logo = Image(logo_path, width=80, height=80) if logo_path else ""
