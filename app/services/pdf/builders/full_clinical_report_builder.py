@@ -1,7 +1,5 @@
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib import colors
-import tempfile
+import tempfile, os
 from datetime import datetime
 
 from app.assets.colors import PRIMARY, SECONDARY, LIGHT, DARK
@@ -12,11 +10,17 @@ from app.services.pdf.components.header import build_header
 from app.services.pdf.components.footer import header_footer
 from app.services.pdf.utils.formatters import bool_text, clean, format_abortions, format_list
 
+# enums
+from app.catalogs.scale_enum import ScaleEnum
+from app.catalogs.mood_enum import MoodEnum
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+LOGO_PATH = os.path.join(BASE_DIR, "assets", "myst_logo.png")
+
 def build_full_clinical_report_pdf(data, charts):
     file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
 
     doc = SimpleDocTemplate(file.name)
-    styles = getSampleStyleSheet()
     elements = []
 
     user = data["user"]
@@ -25,7 +29,7 @@ def build_full_clinical_report_pdf(data, charts):
     last_cycle = data["last_cycle"]
 
     # Encabezado
-    elements.extend(build_header("MYST - REPORTE CLÍNICO COMPLETO", user, history))
+    elements.extend(build_header("REPORTE CLÍNICO COMPLETO", user, history, logo_path=LOGO_PATH))
 
     # Información general
     elements.append(Paragraph("Información general", section_title))
@@ -57,10 +61,11 @@ def build_full_clinical_report_pdf(data, charts):
     # Sustancias
     elements.append(Paragraph("Habitos y riesgos", section_title))
 
-    elements.append(Paragraph(
-        f"Sustancias que declara consumir: {format_list(mapped['substances'])}",
-        text
-    ))
+    substances_table = [
+        ["Sustancias que declara consumir:", format_list(mapped['substances'])]
+    ]
+
+    elements.append(styled_table(substances_table))
     elements.append(Spacer(1, 20))
 
     # Ciclo menstrual
@@ -87,17 +92,19 @@ def build_full_clinical_report_pdf(data, charts):
         elements.append(Spacer(1, 15))
 
         # Logs resumidos (no saturar)
-        if last_cycle.daily_logs:
+        logs = getattr(last_cycle, "daily_logs", [])
+
+        if logs:
             elements.append(Paragraph("Resumen de registros diarios", sub_title))
 
-            log_table = [["Fecha", "Estrés", "Ánimo", "Calambres"]]
+            log_table = [["Fecha", "Estrés", "Ánimo", "Cólicos"]]
 
-            for log in last_cycle.daily_logs[:10]:  # limitamos para no saturar
+            for log in logs[:10]: # mostrar solo los primeros 10 para no saturar el PDF
                 log_table.append([
                     clean(log.date),
-                    clean(log.stress),
-                    clean(log.mood),
-                    clean(log.cramps),
+                    clean(ScaleEnum.MAP.get(log.stress)),
+                    clean(MoodEnum.MAP.get(log.mood)),
+                    clean(ScaleEnum.MAP.get(log.cramps)),
                 ])
 
             elements.append(styled_table_multi(log_table))
@@ -111,7 +118,7 @@ def build_full_clinical_report_pdf(data, charts):
             if path:
                 elements.append(Spacer(1, 10))
                 elements.append(Paragraph(name.capitalize(), sub_title))
-                elements.append(Image(path, width=400, height=200))
+                elements.append(Image(path, width=440, height=250))
 
     # build PDF
     doc.build(elements, onFirstPage=header_footer, onLaterPages=header_footer)
