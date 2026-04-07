@@ -40,7 +40,7 @@ class ClinicalHistoryCreate(BaseModel):
     average_ovulation: Optional[int] = None
 
     sexually_active: Optional[bool] = None
-    miscarriages_abortions: int = Field(ge=0, le=20)
+    miscarriages_abortions: Optional[int] = Field(default=None, ge=0, le=20)
 
 class ClinicalHistoryUpdate(ClinicalHistoryCreate):
     pass
