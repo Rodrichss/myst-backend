@@ -5,8 +5,38 @@ from app.catalogs.diabetes_catalog import DiabetesCatalog
 from app.catalogs.std_catalog import STDCatalog
 from app.catalogs.substance_catalog import SubstanceCatalog
 
+def split_values(value: str | None):
+    if not value:
+        return []
+
+    return [v.strip() for v in value.split(",") if v.strip()]
+
 def get_label_safe(catalog, value):
-    return catalog.get_label(value) if value else "No especificado"
+    if not value:
+        return "No especificado"
+
+    values = split_values(value)
+
+    # múltiples
+    if len(values) > 1:
+        labels = [
+            catalog.MAP.get(v)
+            for v in values
+            if catalog.MAP.get(v)
+        ]
+        return ", ".join(labels) if labels else "No especificado"
+
+    # único
+    return catalog.MAP.get(values[0], "No especificado")
+
+def map_catalog_list(catalog, value):
+    values = split_values(value)
+
+    return [
+        catalog.MAP.get(v)
+        for v in values
+        if catalog.MAP.get(v)
+    ]
 
 def get_full_clinical_report(db, user):
     history = get_or_create_clinical_history(db, user)
@@ -17,23 +47,10 @@ def get_full_clinical_report(db, user):
 
     last_cycle = cycles[0] if cycles else None
 
-    # Limpiar datos
-    if history.sustance_use:
-        raw_values = SubstanceCatalog.deserialize(history.sustance_use)
-
-        substances = [
-            label
-            for s in raw_values
-            if (label := SubstanceCatalog.get_label(s)) is not None
-        ]
-    else:
-        substances = []
-
-    # Mapear datos para el PDF
     mapped_data = {
         "diabetes": get_label_safe(DiabetesCatalog, history.diabetes_mellitus),
         "std": get_label_safe(STDCatalog, history.std),
-        "substances": substances
+        "substances": map_catalog_list(SubstanceCatalog, history.sustance_use)
     }
 
     return {
