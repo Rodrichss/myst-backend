@@ -8,6 +8,7 @@ from app.catalogs.diabetes_catalog import DiabetesCatalog
 from app.catalogs.discharge_enum import DischargeEnum
 from app.catalogs.exercise_catalog import ExerciseCatalog
 #from app.catalogs.medication_catalog import MedicationCatalog
+from app.catalogs.sex_catalog import SexBiologyCatalog, SexLegallyCatalog
 from app.catalogs.std_catalog import STDCatalog
 from app.catalogs.substance_catalog import SubstanceCatalog
 from app.catalogs.symptoms_catalog import SymptomsCatalog
@@ -91,6 +92,18 @@ class DataNormalizerService:
             return data
 
         # -- catálogos --
+        if "sex_biology" in data:
+            data["sex_biology"] = map_to_catalog(
+                data["sex_biology"],
+                SexBiologyCatalog
+            )
+
+        if "sex_legally" in data:
+            data["sex_legally"] = map_to_catalog(
+                data["sex_legally"],
+                SexLegallyCatalog
+            )
+
         if "diabetes_mellitus" in data:
             data["diabetes_mellitus"] = map_to_catalog(
                 data["diabetes_mellitus"],

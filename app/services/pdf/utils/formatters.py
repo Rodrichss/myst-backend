@@ -20,7 +20,8 @@ def format_full_name(user, history):
     ]
     # clean each part and filter out empty ones
     clean_parts = [
-        p for p in parts
+        str(p).strip().title()
+        for p in parts
         if p not in INVALID_VALUES
     ]
     if not clean_parts:

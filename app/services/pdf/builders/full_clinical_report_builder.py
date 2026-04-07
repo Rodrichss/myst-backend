@@ -1,7 +1,7 @@
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 import tempfile, os
 
-from app.assets.styles import section_title, sub_title, text
+from app.assets.styles import section_title, sub_title
 
 from app.services.pdf.components.tables import styled_table, styled_table_multi
 from app.services.pdf.components.header import build_header
@@ -27,13 +27,13 @@ def build_full_clinical_report_pdf(data, charts):
     last_cycle = data["last_cycle"]
 
     # Encabezado
-    elements.extend(build_header("REPORTE CLÍNICO COMPLETO", user, history, logo_path=LOGO_PATH))
+    elements.extend(build_header("REPORTE CLÍNICO COMPLETO", user, history, sex_biology=mapped["sex_biology"], logo_path=LOGO_PATH))
 
     # Información general
     elements.append(Paragraph("Información general", section_title))
 
     general_table = [
-        ["Sexo legal", clean(history.sex_legally)],
+        ["Sexo legal", clean(mapped["sex_legally"])],
         ["¿Es activ@ sexualmente?", bool_text(history.sexually_active)],
         ["¿Ha tenido abortos?", format_abortions(history.miscarriages_abortions)]
     ]

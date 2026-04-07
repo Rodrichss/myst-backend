@@ -4,14 +4,14 @@ from datetime import datetime
 from app.services.pdf.utils.formatters import clean, format_date, format_full_name
 from app.assets.styles import title_style, style
 
-def build_header(title, user, history, logo_path=None):
+def build_header(title, user, history, sex_biology, logo_path=None):
     elements = []
 
     col_widths = [170, 170, 100]
 
     left_info = [
         Paragraph(f"<b>Nombre:</b> {format_full_name(user, history)}", style),
-        Paragraph(f"<b>Sexo:</b> {clean(history.sex_biology)}", style),
+        Paragraph(f"<b>Sexo:</b> {clean(sex_biology)}", style),
     ]
 
     right_info = [

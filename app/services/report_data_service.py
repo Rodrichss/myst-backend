@@ -2,6 +2,7 @@ from app.models.cycle import Cycle
 from app.services.clinical_history_service import get_or_create_clinical_history
 
 from app.catalogs.diabetes_catalog import DiabetesCatalog
+from app.catalogs.sex_catalog import SexBiologyCatalog, SexLegallyCatalog
 from app.catalogs.std_catalog import STDCatalog
 from app.catalogs.substance_catalog import SubstanceCatalog
 
@@ -48,6 +49,8 @@ def get_full_clinical_report(db, user):
     last_cycle = cycles[0] if cycles else None
 
     mapped_data = {
+        "sex_biology": get_label_safe(SexBiologyCatalog, history.sex_biology),
+        "sex_legally": get_label_safe(SexLegallyCatalog, history.sex_legally),
         "diabetes": get_label_safe(DiabetesCatalog, history.diabetes_mellitus),
         "std": map_catalog_list(STDCatalog, history.std),
         "substances": map_catalog_list(SubstanceCatalog, history.sustance_use)
