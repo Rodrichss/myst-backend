@@ -36,21 +36,6 @@ def _get_or_create_history(db: Session, user_id: int) -> ClinicalHistory:
         db.commit()
         db.refresh(history)
     return history
- 
- 
-def _get_next_cycle_position(db: Session, id_history: int) -> int:
-    """Devuelve el siguiente número de orden para un ciclo nuevo."""
-    last = (
-        db.query(Cycle)
-        .filter(Cycle.id_history == id_history)
-        .order_by(Cycle.position.desc().nullslast())
-        .first()
-    )
-    if last and last.position is not None:
-        return last.position + 1
-    # Si hay ciclos sin position, contar todos
-    count = db.query(Cycle).filter(Cycle.id_history == id_history).count()
-    return count + 1
 
 @router.post("/log-day")
 def log_day_from_chat(
@@ -108,8 +93,7 @@ def log_day_from_chat(
  
         new_cycle = Cycle(
             id_history=history.id_history,
-            start_date=event_date,
-            position=_get_next_cycle_position(db, history.id_history)
+            start_date=event_date
         )
         db.add(new_cycle)
         db.commit()

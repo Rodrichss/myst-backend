@@ -132,26 +132,3 @@ def predict_my_next_cycle(
         "predicted_next_period": predicted_date,
         "predicted_cycle_range": predicted_range
     }
-
-@router.post("/fix-position")
-def fix_cycle_position(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    history = db.query(ClinicalHistory).filter(
-        ClinicalHistory.id_user == current_user.id_user
-    ).first()
-    if not history:
-        raise HTTPException(status_code=404, detail="No history found")
-
-    cycles = (
-        db.query(Cycle)
-        .filter(Cycle.id_history == history.id_history)
-        .order_by(Cycle.start_date.asc().nullslast())
-        .all()
-    )
-    for i, cycle in enumerate(cycles, start=1):
-        cycle.position = i
-
-    db.commit()
-    return {"fixed": len(cycles)}
