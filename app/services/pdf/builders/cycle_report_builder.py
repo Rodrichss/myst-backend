@@ -15,6 +15,20 @@ def build_cycle_report_pdf(data, charts=None):
     doc = SimpleDocTemplate(file.name)
     elements = []
 
+    def has_valid_data(table_data, ignore_header=True):
+        invalid_values = {
+            "no especificado", "no especificada", "no hay notas",
+            "nulo", "no realizada", "ninguna", "ninguno", ""
+        }
+        start_index = 1 if ignore_header else 0
+
+        for row in table_data[start_index:]:
+            val = str(row[1] if len(row) > 1 else row[0])
+            clean_val = val.strip().lower()
+            if clean_val and clean_val not in invalid_values:
+                return True
+        return False
+
     user = data["user"]
     history = data["history"]
     mapped = data["mapped_data"]
@@ -49,8 +63,9 @@ def build_cycle_report_pdf(data, charts=None):
         elements.append(Paragraph("Registros diarios detallados", section_title))
 
         for log in logs:
-            elements.append(Paragraph(f"{format_date(log.get('date'))}", sub_title))
-            elements.append(Spacer(1, 6))
+            day_elements = []
+            day_elements.append(Paragraph(f"{format_date(log.get('date'))}", sub_title))
+            day_elements.append(Spacer(1, 6))
 
             summary_table = [
                 ["Flujo", clean(log.get("menstrual_flow"))],
@@ -58,8 +73,9 @@ def build_cycle_report_pdf(data, charts=None):
                 ["Síntomas", format_list(log.get("symptoms"))]
             ]
 
-            elements.append(styled_table(summary_table))
-            elements.append(Spacer(1, 8))
+            if has_valid_data(summary_table, ignore_header=False):
+                day_elements.append(styled_table(summary_table))
+                day_elements.append(Spacer(1, 8))
 
             vital_signs_table = [
                 ["Signos vitales", ""],
@@ -69,8 +85,9 @@ def build_cycle_report_pdf(data, charts=None):
                 ["Glucosa", f"{log.get('glycemia')} mg/dL" if log.get("glycemia") else "No especificada"],
             ]
 
-            elements.append(styled_table_header(vital_signs_table))
-            elements.append(Spacer(1, 8))
+            if has_valid_data(vital_signs_table):
+                day_elements.append(styled_table_header(vital_signs_table))
+                day_elements.append(Spacer(1, 8))
 
             habits_table = [
                 ["Hábitos y actividades", ""],
@@ -80,8 +97,9 @@ def build_cycle_report_pdf(data, charts=None):
                 ["Hábitos/Actividades", format_list(log.get("hobbies_activities"))]
             ]
 
-            elements.append(styled_table_header(habits_table))
-            elements.append(Spacer(1, 8))
+            if has_valid_data(habits_table):
+                day_elements.append(styled_table_header(habits_table))
+                day_elements.append(Spacer(1, 8))
 
             reproductive_table = [
                 ["Datos reproductivos", ""],
@@ -91,8 +109,9 @@ def build_cycle_report_pdf(data, charts=None):
                 ["Su fluido vaginal es: ", clean(log.get("vaginal_discharge"))],
             ]
 
-            elements.append(styled_table_header(reproductive_table))
-            elements.append(Spacer(1, 8))
+            if has_valid_data(reproductive_table):
+                day_elements.append(styled_table_header(reproductive_table))
+                day_elements.append(Spacer(1, 8))
 
             emotional_table = [
                 ["Aspectos emocionales", ""],
@@ -102,8 +121,9 @@ def build_cycle_report_pdf(data, charts=None):
                 ["Antojo", clean(log.get("cravings"))]
             ]
 
-            elements.append(styled_table_header(emotional_table))
-            elements.append(Spacer(1, 8))
+            if has_valid_data(emotional_table):
+                day_elements.append(styled_table_header(emotional_table))
+                day_elements.append(Spacer(1, 8))
 
             test_table = [
                 ["Pruebas", ""],
@@ -111,15 +131,18 @@ def build_cycle_report_pdf(data, charts=None):
                 ["Prueba de ovulación", clean(log.get("ovulation_test"))]
             ]
 
-            elements.append(styled_table_header(test_table))
-            elements.append(Spacer(1, 8))
+            if has_valid_data(test_table):
+                day_elements.append(styled_table_header(test_table))
+                day_elements.append(Spacer(1, 8))
 
-            notes_table = [
-                ["Notas", log.get("notes") if log.get("Notes") else "No hay notas"]
-            ]
+            notes_val = log.get("notes") if log.get("Notes") else "No hay notas"
+            if notes_val and str(notes_val).strip().lower() not in ["no hay notas", "none", "", "string"]:
+                day_elements.append(styled_table([["Notas", notes_val]]))
+                day_elements.append(Spacer(1, 15))
 
-            elements.append(styled_table(notes_table))
-            elements.append(Spacer(1, 15))
+            # Agregar si hay algo más que el título de la fecha
+            if len(day_elements) > 2:
+                elements.extend(day_elements)
 
     # Gráficas
     if charts:
