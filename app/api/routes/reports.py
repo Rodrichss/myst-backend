@@ -1,12 +1,15 @@
+import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_db
 from app.models.user import User
+from app.services.pdf.utils.formatters import format_date
 from app.services.chart_service import generate_cycle_charts
-from app.services.pdf_service import generate_full_clinical_pdf
-from app.services.report_data_service import get_full_clinical_report
+from app.services.pdf_service import generate_cycle_report_pdf, generate_full_clinical_pdf
+from app.services.report_data_service import get_full_clinical_report, get_cycle_report_by_id
 
 router = APIRouter(
     prefix="/reports",
@@ -28,4 +31,31 @@ def download_full_report(
         pdf_path,
         media_type="application/pdf",
         filename="clinical_report.pdf"
+    )
+
+@router.get("/cycle-report/{cycle_id}")
+def download_cycle_report(
+    cycle_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    data = get_cycle_report_by_id(db, current_user, cycle_id)
+
+    if not data:
+        raise HTTPException(status_code=404, detail="Cycle not found")
+
+    charts = generate_cycle_charts(data["cycle"])
+
+    pdf_path = generate_cycle_report_pdf(data, charts)
+
+    start_date = format_date(data["cycle"].start_date)
+    if data["cycle"].end_date:
+        end_date = format_date(data["cycle"].end_date)
+    else:
+        end_date = format_date(datetime.now().date())
+
+    return FileResponse(
+        pdf_path,
+        media_type="application/pdf",
+        filename=f'cycle_{start_date}-{end_date}_report.pdf'
     )

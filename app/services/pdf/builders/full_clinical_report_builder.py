@@ -1,5 +1,5 @@
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
-import tempfile, os
+import tempfile
 
 from app.assets.styles import section_title, sub_title
 
@@ -12,9 +12,6 @@ from app.services.pdf.utils.formatters import bool_text, clean, format_abortions
 from app.catalogs.scale_enum import ScaleEnum
 from app.catalogs.mood_enum import MoodEnum
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-LOGO_PATH = os.path.join(BASE_DIR, "assets", "myst_logo.png")
-
 def build_full_clinical_report_pdf(data, charts):
     file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
 
@@ -25,9 +22,10 @@ def build_full_clinical_report_pdf(data, charts):
     history = data["history"]
     mapped = data["mapped_data"]
     last_cycle = data["last_cycle"]
+    mapped_cycle = data["mapped_cycle"]
 
     # Encabezado
-    elements.extend(build_header("REPORTE CLÍNICO COMPLETO", user, history, sex_biology=mapped["sex_biology"], logo_path=LOGO_PATH))
+    elements.extend(build_header("REPORTE CLÍNICO COMPLETO", user, history, sex_biology=mapped["sex_biology"]))
 
     # Información general
     elements.append(Paragraph("Información general", section_title))
@@ -45,7 +43,7 @@ def build_full_clinical_report_pdf(data, charts):
     elements.append(Paragraph("Antecedentes clínicos", section_title))
 
     clinical_table = [
-        ["¿Ha sido diagnosticada con diabetes?", clean(mapped["diabetes"])],
+        ["¿Ha sido diagnosticad@ con diabetes?", clean(mapped["diabetes"])],
         ["¿Tiene presión alta (hipertensión)?", bool_text(history.arterial_hypertension)],
         ["¿Ha tenido o tiene algún diagnóstico de depresión?", bool_text(history.depression)],
         ["¿Le han diagnosticado síndrome de ovario poliquístico (PCOS)?", bool_text(history.pcos)],
@@ -71,24 +69,15 @@ def build_full_clinical_report_pdf(data, charts):
 
     cycle_info = [
         ["Promedio ciclo (días)", clean(history.average_menstrual_cycle)],
-        ["Ovulación estimada", clean(history.average_ovulation)]
+        ["Ovulación estimada", clean(history.average_ovulation)],
+        ["Fecha de inicio", format_date(mapped_cycle["start_date"])]
     ]
 
     elements.append(styled_table(cycle_info))
-    elements.append(Spacer(1, 20))
+    elements.append(Spacer(1, 15))
 
     # Ultimo ciclo menstrual
     if last_cycle:
-        elements.append(Paragraph("Último ciclo menstrual", section_title))
-
-        cycle_table = [
-            ["Fecha de inicio", format_date(last_cycle.start_date)],
-            ["Fecha de fin", format_date(last_cycle.end_date)]
-        ]
-
-        elements.append(styled_table(cycle_table))
-        elements.append(Spacer(1, 15))
-
         # Logs resumidos (no saturar)
         logs = getattr(last_cycle, "daily_logs", [])
 

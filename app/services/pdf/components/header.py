@@ -1,10 +1,14 @@
+import os
 from reportlab.platypus import Paragraph, Spacer, Image, Table, TableStyle
 from datetime import datetime
 
 from app.services.pdf.utils.formatters import clean, format_date, format_full_name
 from app.assets.styles import title_style, style
 
-def build_header(title, user, history, sex_biology, logo_path=None):
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+LOGO_PATH = os.path.join(BASE_DIR, "assets", "myst_logo.png")
+
+def build_header(title, user, history, sex_biology, logo_path=LOGO_PATH):
     elements = []
 
     col_widths = [170, 170, 100]
