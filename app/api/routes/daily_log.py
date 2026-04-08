@@ -20,7 +20,7 @@ from app.schemas.daily_log import (
 
 from datetime import date
 
-MAX_GAP_DAYS = 1
+MAX_GAP_DAYS = 8
 
 router = APIRouter(
     prefix="/daily-logs",
@@ -45,6 +45,17 @@ def get_last_bleeding_log(db: Session, cycle: Cycle):
         .first()
     )
 
+def get_cycle_for_date(db: Session, history_id: int, log_date: date):
+    # fecha en ciclo existente
+    return (
+        db.query(Cycle).filter(
+            Cycle.id_history == history_id,
+            Cycle.start_date <= log_date
+        ).filter(
+            (Cycle.end_date == None) | (Cycle.end_date >= log_date)
+        ).order_by(Cycle.start_date.desc()).first()
+    )
+
 # create daily log entry
 @router.post("/", response_model=DailyLogResponse)
 def create_daily_log(
@@ -53,61 +64,67 @@ def create_daily_log(
     current_user: User = Depends(get_current_user)
 ):
     history = get_or_create_clinical_history(db, current_user)
-    active_cycle = get_active_cycle(db, history)
 
     # Convertir a dict y normalizar
     data_dict = data.dict(exclude_unset=True)
     data_dict = DataNormalizerService.normalize_daily_log(data_dict)
+    log_date = data_dict.get("date")
+
+    # encontrar ciclo
+    target_cycle = get_cycle_for_date(db, history.id_history, log_date)
 
     # Si hay sangrado y no hay ciclo activo → crear ciclo
-    if data_dict.get("menstrual_flow") and data_dict["menstrual_flow"] > 0:
-        if not active_cycle:
-            active_cycle = Cycle(
+    if data_dict.get("menstrual_flow", 0) > 0:
+        if not target_cycle:
+            # Crear ciclo nuevo porque no existe uno para esa fecha
+            next_cycle = db.query(Cycle).filter(
+                Cycle.id_history == history.id_history,
+                Cycle.start_date > log_date
+            ).order_by(Cycle.start_date.asc()).first()
+
+            end_date = None
+            if next_cycle:
+                from datetime import timedelta
+                end_date = next_cycle.start_date - timedelta(days=1)
+
+            # Crear el ciclo "viejo" o nuevo
+            target_cycle = Cycle(
                 id_history=history.id_history,
-                start_date=data_dict.get("date")
+                start_date=log_date,
+                end_date=end_date
             )
-            db.add(active_cycle)
+
+            db.add(target_cycle)
+
+            prev_cycle = db.query(Cycle).filter(
+                Cycle.id_history == history.id_history,
+                Cycle.start_date < log_date,
+                Cycle.end_date == None
+            ).order_by(Cycle.start_date.desc()).first()
+
+            if prev_cycle:
+                from datetime import timedelta
+                prev_cycle.end_date = log_date - timedelta(days=1)
+
             db.commit()
-            db.refresh(active_cycle)
+            db.refresh(target_cycle)
 
-        else:
-            last_log = get_last_bleeding_log(db, active_cycle)
+    if not target_cycle:
+        target_cycle = db.query(Cycle).filter(
+            Cycle.id_history == history.id_history,
+            Cycle.end_date == None
+        ).first()
 
-            if last_log:
-                days_diff = (data_dict.get("date") - last_log.date).days
-
-                # mismo ciclo
-                if days_diff <= MAX_GAP_DAYS:
-                    pass
-
-                # nuevo ciclo
-                else:
-                    active_cycle.end_date = last_log.date
-                    db.commit()
-
-                    new_cycle = Cycle(
-                        id_history=history.id_history,
-                        start_date=data_dict.get("date")
-                    )
-                    db.add(new_cycle)
-                    db.commit()
-                    db.refresh(new_cycle)
-                    active_cycle = new_cycle
-
-            else:
-                # no sangrado es ciclo actual
-                pass
-
-    if not active_cycle:
+    if not target_cycle:
         raise HTTPException(
             status_code=400,
-            detail="No active cycle found. Register menstrual flow first."
+            detail="No se encontró un ciclo para esta fecha. Registra un flujo menstrual primero."
         )
 
     # Crear log diario
     log = DailyLog(
         **data_dict,
-        id_cycle=active_cycle.id_cycle
+        id_cycle=target_cycle.id_cycle
     )
 
     db.add(log)
