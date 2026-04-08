@@ -26,6 +26,7 @@ def get_my_cycles(
         db.query(Cycle)
         .join(ClinicalHistory)
         .filter(ClinicalHistory.id_user == current_user.id_user)
+        .order_by(Cycle.start_date.desc())
         .all()
     )
 
