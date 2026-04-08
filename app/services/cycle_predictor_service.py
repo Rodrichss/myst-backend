@@ -18,10 +18,11 @@ class CyclePredictor:
     def predict_with_range(self, cycles, last_period_date):
 
         # Filtrar ciclos válidos (experimental)
-        cycle_lengths = [c for c in cycles if 15 <= c <= 45]
+        # cycle_lengths = [c for c in cycles if 15 <= c <= 45]
 
+        cycle_lengths = cycles
         if len(cycle_lengths) < 3:
-            raise ValueError("Not enough data to make prediction")
+            raise ValueError("Not enough data to make a prediction")
 
         # Features
         last_cycle = cycle_lengths[-1]
