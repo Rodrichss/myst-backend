@@ -48,6 +48,9 @@ def log_day_from_chat(
  
     if "error" in extracted:
         raise HTTPException(status_code=400, detail=extracted["error"])
+    
+    # Normalizar keys a minúsculas por si el modelo las devuelve en mayúsculas
+    extracted = {k.lower(): v for k, v in extracted.items()}
  
     # ── Parsear fecha ──────────────────────────────────────────────────────────
     raw_date = extracted.get("date")
@@ -66,13 +69,8 @@ def log_day_from_chat(
         ).first()
  
         if overlapping:
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"Ya existe un ciclo activo que cubre la fecha {event_date}. "
-                    "Cierra el ciclo anterior antes de iniciar uno nuevo."
-                )
-            )
+            intent = "log_symptoms"
+            cycle = overlapping
  
         # Cerrar el ciclo abierto más reciente si lo hay (sin end_date)
         open_cycle = (
@@ -170,6 +168,11 @@ def log_day_from_chat(
     # symptoms en el modelo es String; si Gemini devuelve lista, unirla
     if "symptoms" in log_data and isinstance(log_data["symptoms"], list):
         log_data["symptoms"] = ", ".join(log_data["symptoms"])
+    
+    # Si el intent fue start_period (original o degradado), 
+    # garantizar al menos flujo ligero
+    if extracted.get("intent") == "start_period" and "menstrual_flow" not in log_data:
+        log_data["menstrual_flow"] = 1
  
     log = DailyLog(
         id_cycle=cycle.id_cycle,

@@ -2,63 +2,81 @@ import google.genai as genai
 import os
 import json
 import re
-from datetime import date
+from datetime import date, timedelta
 
 client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY")
 )
 
-def analyze_daily_message(message: str):
-
-    today = date.today().isoformat()  # contexto de fecha real para el modelo
-
-    prompt = f"""
-You are a health assistant specialized in menstrual tracking.
-Today's date is {today}.
-
-Analyze the user message and extract structured data.
-Return ONLY a valid JSON object.
-
-Fields to extract:
-
-- intent: one of ["log_symptoms", "start_period", "end_period"]
-- date: ISO format (YYYY-MM-DD). Use today ({today}) if no date is mentioned.
-  IMPORTANT: never return a future date. If the mentioned date would be in the future,
-  use the same day/month from the previous year.
-- stress: integer 0-10
-- anxiety: integer 0-10
-- mood: integer 0-10
-- cramps: integer 0-10
-- cravings: 0 or 1
-- symptoms: array of strings (e.g. ["headache", "fatigue", "bloating"])
+# ── System prompt estático (candidato a cache) ─────────────────────────────────
+# Se define una sola vez. Gemini 2.5 flash-lite soporta implicit caching:
+# si el prefijo del prompt es idéntico entre requests, se cachea automáticamente.
+_SYSTEM_PROMPT = """You are a menstrual health assistant. Extract structured data from user messages.
+Return ONLY a valid JSON object — no markdown, no backticks, no explanation.
+Omit any field not mentioned by the user.
+IMPORTANT: All JSON keys must be lowercase (intent, date, stress, etc.)
  
-Rules for intent:
-- "me bajó", "empezó mi periodo", "me llegó", "inicio de ciclo" → intent = "start_period"
-- "terminó mi periodo", "se fue", "acabó mi regla", "fin de ciclo" → intent = "end_period"
-- anything else → intent = "log_symptoms"
-
-Rules for dates:
-- "hoy" → {today}
-- "ayer" → subtract 1 day from {today}
-- "el lunes", "el martes", etc. → find the most recent past occurrence of that weekday
-- "15 de noviembre", "el 3 de marzo" → use the current year {date.today().year},
-  but if that date is in the future, use {date.today().year - 1} instead
-- Always output date as YYYY-MM-DD
+INTENT (required):
+- start_period: "me bajó", "empezó mi periodo", "me llegó", "inicio de ciclo", "me vino"
+- end_period: "terminó mi periodo", "se fue", "acabó mi regla", "fin de ciclo"
+- log_symptoms: anything else
+- - If intent is start_period, always include menstrual_flow (minimum 1) unless user says no bleeding
  
-Rules for symptoms:
-- Normalize to simple English words
-- Do NOT include events (e.g. "period started") in symptoms
+DATE RULES:
+- "hoy" → today | "ayer" → today-1 | "antier" → today-2
+- weekday name → most recent past occurrence
+- "15 de noviembre" → use current year; if future, use previous year
+- Never return a future date
+- Format: YYYY-MM-DD
  
-If a field is not mentioned, omit it from the JSON entirely.
-
-
-User message:
-{message}
-"""
+FIELDS and valid values:
+ 
+menstrual_flow: 0=Nulo 1=Ligero 2=Medio 3=Abundante 4=Goteo
+mood: 1=Triste 2=Enojada 3=Neutral 4=Feliz 5=MuyFeliz 6=CambiosDeHumor
+stress: 0=Ninguno 1=Leve 2=Moderado 3=Alto 4=MuyAlto
+anxiety: 0=Ninguno 1=Leve 2=Moderado 3=Alto 4=MuyAlto
+cramps: 0=Ninguno 1=Leve 2=Moderado 3=Alto 4=MuyAlto
+cravings: 1=Dulce 2=Salado 3=Chocolate 4=Carbohidratos 5=Chatarra 6=Saludable 7=Picante 8=Ninguno
+vaginal_discharge: 1=Seco 2=Pegajoso 3=Cremoso 4=Acuoso 5=ClaraHuevo 6=Anormal 7=Ninguno
+pregnancy_test: 0=Negativo 1=Positivo 2=Indeterminado 3=NoRealizada
+ovulation_test: 0=Negativo 1=Positivo 2=Indeterminado 3=NoRealizada
+ 
+symptoms (array, use only these keys):
+headache sore_throat muscle_aches back_pain shortness_of_breath
+fatigue insomnia fever cough bloating diarrhea constipation
+loss_of_taste_or_smell nausea_or_vomiting
+ 
+exercise (string, one key):
+running swimming cycling hiking yoga weightlifting boxing walking other
+ 
+hobbies_activities (string, one or more keys comma-separated):
+reading self_care rest dancing entertainment painting cooking gardening writing other
+ 
+anticonceptive_type (string, one key):
+pill iud implant injection condom none
+ 
+Other numeric fields (use realistic values):
+weight: kg (float) | height: cm (float) | heart_rate: bpm (int)
+water_consumption: liters (float) | sleep_time: HH:MM | exercise_time: HH:MM
+sexual_penetration: true/false | anticonceptive_use: true/false"""
+ 
+ 
+def analyze_daily_message(message: str) -> dict:
+    today = date.today()
+    yesterday = (today - timedelta(days=1)).isoformat()
+ 
+    # User prompt: solo fecha + mensaje (corto, varía por request)
+    user_prompt = (
+        f"Today: {today.isoformat()} | Yesterday: {yesterday}\n"
+        f"User message: {message}"
+    )
+ 
+    full_prompt = f"{_SYSTEM_PROMPT}\n\n{user_prompt}"
+ 
     try:
         response = client.models.generate_content(
             model="gemini-2.5-flash-lite",
-            contents=prompt
+            contents=full_prompt,
         )
         return parse_response(response)
     except Exception as e:
