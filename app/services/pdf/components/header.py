@@ -8,10 +8,10 @@ from app.assets.styles import title_style, style
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 LOGO_PATH = os.path.join(BASE_DIR, "assets", "myst_logo.png")
 
+col_widths = [220, 170, 110]
+
 def build_header(title, user, history, sex_biology, logo_path=LOGO_PATH):
     elements = []
-
-    col_widths = [170, 170, 100]
 
     left_info = [
         Paragraph(f"<b>Nombre:</b> {format_full_name(user, history)}", style),
@@ -23,7 +23,7 @@ def build_header(title, user, history, sex_biology, logo_path=LOGO_PATH):
         Paragraph(f"<b>Fecha del reporte:</b> {format_date(datetime.now().date())}", style),
     ]
 
-    logo = Image(logo_path, width=80, height=80) if logo_path else ""
+    logo = Image(logo_path, width=100, height=100) if logo_path else ""
 
     # Estructura de la tabla:
     # Fila 0: [Título (que se extenderá), vacío, Logo (que ocupa 2 filas)]
@@ -48,6 +48,12 @@ def build_header(title, user, history, sex_biology, logo_path=LOGO_PATH):
         # Alineaciones
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('ALIGN', (2, 0), (2, 1), 'RIGHT'), # Logo a la derecha
+
+        # Padding
+        ('TOPPADDING', (2, 0), (2, 0), -15), # Un valor negativo lo sube más allá del límite
+        ('BOTTOMPADDING', (2, 0), (2, 1), 0),
+
+        ('VALIGN', (2, 0), (2, 1), 'TOP'),
 
         # Opcional: Debugging (descomenta la siguiente línea para ver los bordes)
         # ('GRID', (0,0), (-1,-1), 0.5, colors.grey),

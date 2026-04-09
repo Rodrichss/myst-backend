@@ -1,9 +1,10 @@
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.pagesizes import LETTER
 import tempfile
 
-from app.assets.styles import section_title, sub_title
+from app.assets.styles import section_title, section_sub_title, sub_title, label_style
 
-from app.services.pdf.components.tables import styled_table, styled_table_multi
+from app.services.pdf.components.tables import styled_table, styled_table_multi, charts_table
 from app.services.pdf.components.header import build_header
 from app.services.pdf.components.footer import header_footer
 from app.services.pdf.utils.formatters import bool_text, clean, format_abortions, format_list, format_date, format_stds
@@ -15,14 +16,21 @@ from app.catalogs.mood_enum import MoodEnum
 def build_full_clinical_report_pdf(data, charts):
     file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
 
-    doc = SimpleDocTemplate(file.name)
+    # LETTER es 612pt de ancho. 612 - 500 = 112 / 2 = 56pt de margen cada lado.
+    doc = SimpleDocTemplate(
+        file.name,
+        pagesize=LETTER,
+        rightMargin=56,
+        leftMargin=56,
+        topMargin=50,
+        bottomMargin=50
+    )
     elements = []
 
     user = data["user"]
     history = data["history"]
     mapped = data["mapped_data"]
     last_cycle = data["last_cycle"]
-    mapped_cycle = data["mapped_cycle"]
 
     # Encabezado
     elements.extend(build_header("REPORTE CLÍNICO COMPLETO", user, history, sex_biology=mapped["sex_biology"]))
@@ -37,7 +45,7 @@ def build_full_clinical_report_pdf(data, charts):
     ]
 
     elements.append(styled_table(general_table))
-    elements.append(Spacer(1, 20))
+    elements.append(Spacer(1, 10))
 
     # Antecedentes clínicos
     elements.append(Paragraph("Antecedentes clínicos", section_title))
@@ -52,7 +60,7 @@ def build_full_clinical_report_pdf(data, charts):
     ]
 
     elements.append(styled_table(clinical_table))
-    elements.append(Spacer(1, 20))
+    elements.append(Spacer(1, 10))
 
     # Sustancias
     elements.append(Paragraph("Habitos y riesgos", section_title))
@@ -62,18 +70,20 @@ def build_full_clinical_report_pdf(data, charts):
     ]
 
     elements.append(styled_table(substances_table))
-    elements.append(Spacer(1, 20))
+    elements.append(Spacer(1, 10))
 
     # Ciclo menstrual
     elements.append(Paragraph("Información del ciclo menstrual", section_title))
 
     cycle_info = [
         ["Promedio ciclo (días)", clean(history.average_menstrual_cycle)],
-        ["Ovulación estimada", clean(history.average_ovulation)],
-        ["Fecha de inicio", format_date(mapped_cycle["start_date"])]
+        ["Regularidad", clean(history.regularity)],
+        ["Ciclo actual", format_date(history.last_period_date)]
     ]
 
     elements.append(styled_table(cycle_info))
+    elements.append(Spacer(1, 3))
+    elements.append(Paragraph("Usualmente la ovulación ocurre a la mitad del ciclo menstrual", label_style))
     elements.append(Spacer(1, 15))
 
     # Ultimo ciclo menstrual
@@ -82,7 +92,7 @@ def build_full_clinical_report_pdf(data, charts):
         logs = getattr(last_cycle, "daily_logs", [])
 
         if logs:
-            elements.append(Paragraph("Resumen de registros diarios", sub_title))
+            elements.append(Paragraph("Resumen de registros diarios", section_sub_title))
 
             log_table = [["Fecha", "Estrés", "Ánimo", "Cólicos"]]
 
@@ -95,17 +105,12 @@ def build_full_clinical_report_pdf(data, charts):
                 ])
 
             elements.append(styled_table_multi(log_table))
-    elements.append(Spacer(1, 20))
+    elements.append(Spacer(1, 10))
 
-    # GRÁFICAS
+    # Gráficas
     if charts:
-        elements.append(Paragraph("Gráficas del ciclo", section_title))
-
-        for name, path in charts.items():
-            if path:
-                elements.append(Spacer(1, 10))
-                elements.append(Paragraph(name.capitalize(), sub_title))
-                elements.append(Image(path, width=440, height=250))
+        elements.append(Paragraph("Visualización de datos del último ciclo", section_title))
+        elements.append(charts_table(charts, sub_title))
 
     # build PDF
     doc.build(elements, onFirstPage=header_footer, onLaterPages=header_footer)

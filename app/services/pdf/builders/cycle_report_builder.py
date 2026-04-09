@@ -1,18 +1,28 @@
 from datetime import datetime
 
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.pagesizes import LETTER
 import tempfile
 
 from app.assets.styles import section_title, sub_title
 
-from app.services.pdf.components.tables import styled_table, styled_table_header, styled_table_multi
+from app.services.pdf.components.tables import styled_table, styled_table_header, styled_subtitle, charts_table
 from app.services.pdf.components.header import build_header
 from app.services.pdf.components.footer import header_footer
 from app.services.pdf.utils.formatters import bool_text, clean, format_date, format_list
 
 def build_cycle_report_pdf(data, charts=None):
     file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    doc = SimpleDocTemplate(file.name)
+
+    # LETTER es 612pt de ancho. 612 - 500 = 112 / 2 = 56pt de margen cada lado.
+    doc = SimpleDocTemplate(
+        file.name,
+        pagesize=LETTER,
+        rightMargin=56,
+        leftMargin=56,
+        topMargin=50,
+        bottomMargin=50
+    )
     elements = []
 
     def has_valid_data(table_data, ignore_header=True):
@@ -35,15 +45,16 @@ def build_cycle_report_pdf(data, charts=None):
     cycle = data["cycle"]
     mapped_cycle = data["mapped_cycle"]
 
+    end_date = cycle.end_date or datetime.now().date()
+
     # Encabezado
-    title = f"CICLO: {format_date(cycle.start_date)} - {format_date(cycle.end_date)}"
+    title = f"Ciclo: {format_date(cycle.start_date)} - {format_date(end_date)}"
     elements.extend(build_header(title, user, history, sex_biology=mapped["sex_biology"]))
 
     # Resumen del ciclo
     elements.append(Paragraph("Resumen del periodo", section_title))
 
     duration = "No especificada"
-    end_date = cycle.end_date or datetime.now().date()
     if cycle.start_date:
         duration = f"{(end_date - cycle.start_date).days + 1} días"
 
@@ -63,9 +74,10 @@ def build_cycle_report_pdf(data, charts=None):
         elements.append(Paragraph("Registros diarios detallados", section_title))
 
         for log in logs:
+            text_date = f"Día: {format_date(log.get('date'))}"
             day_elements = []
-            day_elements.append(Paragraph(f"{format_date(log.get('date'))}", sub_title))
-            day_elements.append(Spacer(1, 6))
+            day_elements.append(styled_subtitle(text_date))
+            #day_elements.append(Spacer(1, 6))
 
             flow_val = clean(log.get("menstrual_flow"))
             if flow_val in ["Nulo", "0", 0]:
@@ -79,7 +91,7 @@ def build_cycle_report_pdf(data, charts=None):
 
             if has_valid_data(summary_table, ignore_header=False):
                 day_elements.append(styled_table(summary_table))
-                day_elements.append(Spacer(1, 8))
+                #day_elements.append(Spacer(1, 8))
 
             vital_signs_table = [
                 ["Signos vitales", ""],
@@ -91,7 +103,7 @@ def build_cycle_report_pdf(data, charts=None):
 
             if has_valid_data(vital_signs_table):
                 day_elements.append(styled_table_header(vital_signs_table))
-                day_elements.append(Spacer(1, 8))
+                #day_elements.append(Spacer(1, 8))
 
             habits_table = [
                 ["Hábitos y actividades", ""],
@@ -103,7 +115,7 @@ def build_cycle_report_pdf(data, charts=None):
 
             if has_valid_data(habits_table):
                 day_elements.append(styled_table_header(habits_table))
-                day_elements.append(Spacer(1, 8))
+                #day_elements.append(Spacer(1, 8))
 
             reproductive_table = [
                 ["Datos reproductivos", ""],
@@ -115,7 +127,7 @@ def build_cycle_report_pdf(data, charts=None):
 
             if has_valid_data(reproductive_table):
                 day_elements.append(styled_table_header(reproductive_table))
-                day_elements.append(Spacer(1, 8))
+                #day_elements.append(Spacer(1, 8))
 
             emotional_table = [
                 ["Aspectos emocionales", ""],
@@ -127,7 +139,7 @@ def build_cycle_report_pdf(data, charts=None):
 
             if has_valid_data(emotional_table):
                 day_elements.append(styled_table_header(emotional_table))
-                day_elements.append(Spacer(1, 8))
+                #day_elements.append(Spacer(1, 8))
 
             test_table = [
                 ["Pruebas", ""],
@@ -137,25 +149,22 @@ def build_cycle_report_pdf(data, charts=None):
 
             if has_valid_data(test_table):
                 day_elements.append(styled_table_header(test_table))
-                day_elements.append(Spacer(1, 8))
+                #day_elements.append(Spacer(1, 8))
 
-            notes_val = log.get("notes") if log.get("Notes") else "No hay notas"
+            notes_val = log.get("notes") if log.get("notes") else "No hay notas"
             if notes_val and str(notes_val).strip().lower() not in ["no hay notas", "none", "", "string"]:
                 day_elements.append(styled_table([["Notas", notes_val]]))
-                day_elements.append(Spacer(1, 15))
+                #day_elements.append(Spacer(1, 15))
 
             # Agregar si hay algo más que el título de la fecha
             if len(day_elements) > 2:
                 elements.extend(day_elements)
+                elements.append(Spacer(1, 15))
 
     # Gráficas
     if charts:
-        elements.append(Paragraph("Visualizacón de datos", section_title))
-        for name, path in charts.items():
-            if path:
-                elements.append(Spacer(1, 10))
-                elements.append(Paragraph(name.capitalize(), sub_title))
-                elements.append(Image(path, width=440, height=250))
+        elements.append(Paragraph("Visualización de datos", section_title))
+        elements.append(charts_table(charts, sub_title))
 
     # build PDF
     doc.build(elements, onFirstPage=header_footer, onLaterPages=header_footer)
