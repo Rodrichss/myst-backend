@@ -10,6 +10,7 @@ from app.models.user import User
 from app.models.clinical_history import ClinicalHistory
 from app.models.cycle import Cycle
 from app.schemas.cycle import CycleResponse
+from app.services.cycle_stats_service import update_cycle_stats
 
 router = APIRouter(
     prefix="/cycles",
@@ -68,6 +69,9 @@ def delete_my_cycle(
 
     db.delete(cycle)
     db.commit()
+
+    # Recalcular stats tras eliminar un ciclo
+    update_cycle_stats(db, history.id_history)
 
     return {"message": "Cycle deleted successfully"}
 

@@ -11,6 +11,7 @@ from app.schemas.clinical_history import (
     ClinicalHistoryResponse
 )
 from app.services.data_normalizer_service import DataNormalizerService
+from app.services.cycle_stats_service import update_cycle_stats
 
 router = APIRouter(
     prefix="/clinical-history",
@@ -103,3 +104,17 @@ def update_my_clinical_history(
         raise HTTPException(status_code=500, detail="Error updating database")
 
     return history
+
+@router.post("/me/backfill-stats") # temporal for testing
+def backfill_cycle_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    history = db.query(ClinicalHistory).filter(
+        ClinicalHistory.id_user == current_user.id_user
+    ).first()
+    if not history:
+        raise HTTPException(status_code=404, detail="Clinical history not found")
+    
+    update_cycle_stats(db, history.id_history)
+    return {"message": "Stats updated successfully"}

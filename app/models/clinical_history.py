@@ -55,8 +55,11 @@ class ClinicalHistory(Base):
     pcos_screening = Column(Boolean, nullable=True)
     pcos = Column(Boolean, nullable=True)
 
+    # Menstrual cycle stats -- se recalculan automaticamente desde los ciclos
     average_menstrual_cycle = Column(Integer, nullable=True)
     average_ovulation = Column(Integer, nullable=True)
+    last_period_date = Column(Date, nullable=True)       
+    regularity = Column(String(10), nullable=True)       
 
     sexually_active = Column(Boolean, nullable=True)
     miscarriages_abortions = Column(Integer, nullable=False, default=0)

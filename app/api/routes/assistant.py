@@ -10,6 +10,7 @@ from app.models.daily_log import DailyLog
 from app.schemas.assistant import ChatMessage
 from app.services.ai_service import analyze_daily_message
 from datetime import date, datetime, timedelta
+from app.services.cycle_stats_service import update_cycle_stats
 
 router = APIRouter(
     prefix="/assistant",
@@ -90,14 +91,15 @@ def log_day_from_chat(
             if open_cycle.end_date < open_cycle.start_date:
                 open_cycle.end_date = open_cycle.start_date
             db.commit()
- 
+
         new_cycle = Cycle(
             id_history=history.id_history,
-            start_date=event_date
+            start_date=event_date,
         )
         db.add(new_cycle)
         db.commit()
         db.refresh(new_cycle)
+        update_cycle_stats(db, history.id_history)  
         cycle = new_cycle
  
     elif intent == "end_period":
@@ -132,6 +134,7 @@ def log_day_from_chat(
         open_cycle.end_date = event_date
         db.commit()
         db.refresh(open_cycle)
+        update_cycle_stats(db, history.id_history)  
         cycle = open_cycle
  
     else:  # log_symptoms
@@ -182,6 +185,5 @@ def log_day_from_chat(
         "intent": intent,
         "date": event_date.isoformat(),
         "cycle_id": cycle.id_cycle,
-        "cycle_position": cycle.position,
         "data_extracted": extracted,
     }

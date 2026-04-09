@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import date
-from typing import Optional
+from typing import Optional, Literal
 
 class ClinicalHistoryCreate(BaseModel):
     last_name: Optional[str] = None
@@ -36,8 +36,8 @@ class ClinicalHistoryCreate(BaseModel):
     pcos_screening: Optional[bool] = None
     pcos: Optional[bool] = None
 
-    average_menstrual_cycle: Optional[int] = None
-    average_ovulation: Optional[int] = None
+    # No se exponen en Create/Update — son calculados automáticamente
+    # average_menstrual_cycle, average_ovulation, last_period_date, regularity
 
     sexually_active: Optional[bool] = None
     miscarriages_abortions: Optional[int] = Field(default=None, ge=0, le=20)
@@ -47,6 +47,12 @@ class ClinicalHistoryUpdate(ClinicalHistoryCreate):
 
 class ClinicalHistoryResponse(ClinicalHistoryCreate):
     id_history: int
+
+    # Campos calculados — solo lectura
+    average_menstrual_cycle: Optional[int] = None
+    average_ovulation: Optional[int] = None
+    last_period_date: Optional[date] = None
+    regularity: Optional[Literal["regular", "irregular"]] = None
 
     class Config:
         from_attributes = True
