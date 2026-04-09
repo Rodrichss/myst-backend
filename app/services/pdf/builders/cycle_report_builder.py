@@ -67,8 +67,12 @@ def build_cycle_report_pdf(data, charts=None):
             day_elements.append(Paragraph(f"{format_date(log.get('date'))}", sub_title))
             day_elements.append(Spacer(1, 6))
 
+            flow_val = clean(log.get("menstrual_flow"))
+            if flow_val in ["Nulo", "0", 0]:
+                flow_val = "Sin sangrado"
+
             summary_table = [
-                ["Flujo", clean(log.get("menstrual_flow"))],
+                ["Flujo", flow_val],
                 ["Cólicos", clean(log.get("cramps"))],
                 ["Síntomas", format_list(log.get("symptoms"))]
             ]
