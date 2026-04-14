@@ -30,7 +30,7 @@ def download_full_report(
     return FileResponse(
         pdf_path,
         media_type="application/pdf",
-        filename="clinical_report.pdf"
+        filename="historial_clinico.pdf"
     )
 
 @router.get("/cycle-report/{cycle_id}")
@@ -57,5 +57,5 @@ def download_cycle_report(
     return FileResponse(
         pdf_path,
         media_type="application/pdf",
-        filename=f'cycle_{start_date}-{end_date}_report.pdf'
+        filename=f'ciclo_{start_date}-{end_date}.pdf'
     )

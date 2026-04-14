@@ -6,6 +6,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
+from app.assets.colors import PRIMARY, SECONDARY, LIGHT, DARK
+
 from app.db.database import SessionLocal
 from app.models.password_reset import PasswordResetToken
 from app.models.user import User
@@ -31,18 +33,122 @@ def get_db():
 def verify_email(token: str = Query(...), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.verification_token == token).first()
 
+    def render_page(title, message, type="success"):
+        return HTMLResponse(f"""
+        <html>
+        <head>
+            <style>
+                :root {{
+                    --primary: {PRIMARY};
+                    --secondary: {SECONDARY};
+                    --light: {LIGHT};
+                    --dark: {DARK};
+
+                    --success: #6FCF97;
+                    --warning: #F2C94C;
+                    --error: #C06C84;
+                }}
+
+                body {{
+                    margin: 0;
+                    padding: 0;
+                    font-family: 'Segoe UI', sans-serif;
+                    background: linear-gradient(135deg, var(--primary), var(--secondary));
+                    height: 100vh;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }}
+
+                .container {{
+                    background: var(--light);
+                    padding: 40px;
+                    border-radius: 16px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+                    width: 100%;
+                    max-width: 400px;
+                    text-align: center;
+                }}
+
+                .logo {{
+                    font-size: 22px;
+                    font-weight: bold;
+                    color: var(--primary);
+                    margin-bottom: 15px;
+                }}
+
+                h2 {{
+                    color: var(--dark);
+                    margin-bottom: 10px;
+                }}
+
+                p {{
+                    font-size: 14px;
+                    margin-bottom: 20px;
+                    color: #666;
+                }}
+
+                .status {{
+                    font-weight: bold;
+                    margin-top: 10px;
+                }}
+
+                .success {{ color: var(--success); }}
+                .warning {{ color: var(--warning); }}
+                .error {{ color: var(--error); }}
+
+                a {{
+                    display: inline-block;
+                    margin-top: 15px;
+                    padding: 10px 15px;
+                    border-radius: 10px;
+                    background: var(--primary);
+                    color: white;
+                    text-decoration: none;
+                    font-size: 14px;
+                    transition: 0.3s;
+                }}
+
+                a:hover {{
+                    background: var(--secondary);
+                }}
+            </style>
+        </head>
+
+        <body>
+            <div class="container">
+                <div class="logo">Myst</div>
+                <h2 class="status {type}">{title}</h2>
+                <p>{message}</p>
+            </div>
+        </body>
+        </html>
+        """)
+
     if not user:
-        raise HTTPException(status_code=404, detail="Invalid verification token")
+        return render_page(
+            "Enlace inválido",
+            "El enlace de verificación no es válido o ha expirado.",
+            "error"
+        )
 
     if user.is_verified:
-        return HTMLResponse("<h2>Email already verified</h2>")
+        return render_page(
+            "Correo ya verificado",
+            "Tu cuenta ya estaba verificada. Puedes iniciar sesión sin problema.",
+            "warning"
+        )
 
     user.is_verified = True
     user.verification_token = None
 
     db.commit()
 
-    return HTMLResponse("<h2>Email verified successfully</h2>")
+    return render_page(
+        "¡Correo verificado!",
+        "Tu cuenta ha sido verificada correctamente. Ya puedes iniciar sesión.",
+        "success"
+    )
 
 # ingresar
 @router.post("/login", response_model=Token)
@@ -151,19 +257,215 @@ def reset_password_form(token: str):
 
     return f"""
     <html>
-        <body>
-            <h2>Restablecer contraseña</h2>
+    <head>
+        <style>
+            :root {{
+                --primary: {PRIMARY};
+                --secondary: {SECONDARY};
+                --light: {LIGHT};
+                --dark: {DARK};
 
-            <form action="/auth/reset-password" method="post">
+                /* colores suaves */
+                --error: #C06C84;      /* rojo suave */
+                --success: #6FCF97;    /* verde suave */
+            }}
+
+            body {{
+                margin: 0;
+                padding: 0;
+                font-family: 'Segoe UI', sans-serif;
+                background: linear-gradient(135deg, var(--primary), var(--secondary));
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }}
+
+            .container {{
+                background: var(--light);
+                padding: 40px;
+                border-radius: 16px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+                width: 100%;
+                max-width: 400px;
+                text-align: center;
+            }}
+
+            h2 {{
+                color: var(--dark);
+            }}
+
+            p {{
+                color: #666;
+                font-size: 14px;
+                margin-bottom: 20px;
+            }}
+
+            .input-group {{
+                position: relative;
+                margin-bottom: 15px;
+            }}
+
+            input {{
+                width: 100%;
+                padding: 12px;
+                border-radius: 10px;
+                border: 1px solid #ccc;
+                font-size: 14px;
+            }}
+
+            input:focus {{
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 5px var(--primary);
+            }}
+
+            .toggle {{
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                cursor: pointer;
+                font-size: 12px;
+                color: var(--primary);
+            }}
+
+            .rules {{
+                text-align: left;
+                font-size: 12px;
+                margin-bottom: 10px;
+            }}
+
+            .rules span {{
+                display: block;
+                margin-bottom: 4px;
+                color: #999;
+            }}
+
+            .rules span.valid {{
+                color: var(--success);
+            }}
+
+            .rules span.invalid {{
+                color: var(--error);
+            }}
+
+            button {{
+                width: 100%;
+                padding: 12px;
+                border: none;
+                border-radius: 10px;
+                background: var(--primary);
+                color: white;
+                font-size: 16px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: 0.3s;
+                opacity: 0.6;
+            }}
+
+            button.enabled {{
+                opacity: 1;
+            }}
+
+            button:disabled {{
+                cursor: not-allowed;
+            }}
+
+            .logo {{
+                font-size: 22px;
+                font-weight: bold;
+                color: var(--primary);
+                margin-bottom: 15px;
+            }}
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+            <div class="logo">Myst</div>
+            <h2>Restablecer contraseña</h2>
+            <p>Tu contraseña debe cumplir con los requisitos</p>
+
+            <form id="form" action="/auth/reset-password" method="post">
                 <input type="hidden" name="token" value="{token}" />
 
-                <label>Nueva contraseña:</label><br>
-                <input type="password" name="new_password" required><br><br>
+                <div class="input-group">
+                    <input type="password" id="password" name="new_password" placeholder="Nueva contraseña" required>
+                    <span class="toggle" onclick="togglePassword('password')">👁</span>
+                </div>
 
-                <button type="submit">Cambiar contraseña</button>
+                <div class="input-group">
+                    <input type="password" id="confirm" placeholder="Confirmar contraseña" required>
+                    <span class="toggle" onclick="togglePassword('confirm')">👁</span>
+                </div>
+
+                <div class="rules">
+                    <span id="length">• Mínimo 8 caracteres</span>
+                    <span id="upper">• Al menos una mayúscula</span>
+                    <span id="lower">• Al menos una minúscula</span>
+                    <span id="digit">• Al menos un número</span>
+                    <span id="special">• Al menos un carácter especial</span>
+                    <span id="match">• Las contraseñas coinciden</span>
+                </div>
+
+                <button id="submitBtn" type="submit" disabled>Cambiar contraseña</button>
             </form>
+        </div>
 
-        </body>
+        <script>
+            const password = document.getElementById('password');
+            const confirm = document.getElementById('confirm');
+            const button = document.getElementById('submitBtn');
+
+            const rules = {{
+                length: document.getElementById('length'),
+                upper: document.getElementById('upper'),
+                lower: document.getElementById('lower'),
+                digit: document.getElementById('digit'),
+                special: document.getElementById('special'),
+                match: document.getElementById('match')
+            }};
+
+            function togglePassword(id) {{
+                const input = document.getElementById(id);
+                input.type = input.type === "password" ? "text" : "password";
+            }}
+
+            function validate() {{
+                const pass = password.value;
+                const conf = confirm.value;
+
+                const checks = {{
+                    length: pass.length >= 8,
+                    upper: /[A-Z]/.test(pass),
+                    lower: /[a-z]/.test(pass),
+                    digit: /[0-9]/.test(pass),
+                    special: /[!@#$%^&*(),.?":{{}}|<>]/.test(pass),
+                    match: pass && conf && pass === conf
+                }};
+
+                let allValid = true;
+
+                for (let key in checks) {{
+                    if (checks[key]) {{
+                        rules[key].classList.add("valid");
+                        rules[key].classList.remove("invalid");
+                    }} else {{
+                        rules[key].classList.add("invalid");
+                        rules[key].classList.remove("valid");
+                        allValid = false;
+                    }}
+                }}
+
+                button.disabled = !allValid;
+                if (allValid) button.classList.add("enabled");
+                else button.classList.remove("enabled");
+            }}
+
+            password.addEventListener('input', validate);
+            confirm.addEventListener('input', validate);
+        </script>
+    </body>
     </html>
     """
-

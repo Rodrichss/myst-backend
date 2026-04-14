@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_db
 from app.db.database import SessionLocal
 from app.models.reminder import Reminder
 from app.models.user import User
@@ -16,13 +16,6 @@ router = APIRouter(
     prefix="/reminders",
     tags=["Reminders"]
 )
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # Create reminder (private)
 @router.post("/", response_model=ReminderResponse)
