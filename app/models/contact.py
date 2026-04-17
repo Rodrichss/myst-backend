@@ -24,6 +24,10 @@ class Contact(Base):
     phone_number = Column(String(20), unique=True, nullable=True)
     address = Column(String(200), nullable=True)
 
+    about = Column(String(250), nullable=True)
+    specialty = Column(String(50), nullable=True)
+    genre = Column(Integer, nullable=True)
+
     # Relationships
     reminders = relationship(
         "Reminder",
