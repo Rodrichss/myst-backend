@@ -7,6 +7,9 @@ class ContactCreate(BaseModel):
     email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
     address: Optional[str] = None
+    about = Optional[str] = None
+    specialty = Optional[str] = None
+    genre =Optional[int] = None
 
 class ContactUpdate(BaseModel):
     name: Optional[str] = None
@@ -14,6 +17,9 @@ class ContactUpdate(BaseModel):
     email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
     address: Optional[str] = None
+    about = Optional[str] = None
+    specialty = Optional[str] = None
+    genre =Optional[int] = None
 
 class ContactResponse(ContactCreate):
     id_contact: int
