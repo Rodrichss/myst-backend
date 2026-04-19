@@ -10,7 +10,7 @@ class User(Base):
     email = Column(String(50), unique=True)
     password = Column(String(255))
     initials = Column(String(6), nullable=True)
-    picture = Column(String(50), nullable=True)
+    picture = Column(String(255), nullable=True)
 
     is_verified = Column(Boolean, default=False)
     verification_token = Column(String(255), nullable=True)

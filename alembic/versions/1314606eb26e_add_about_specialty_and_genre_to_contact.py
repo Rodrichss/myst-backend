@@ -24,7 +24,7 @@ def upgrade() -> None:
     op.add_column('contact', sa.Column('about', sa.String(length=250), nullable=True))
     op.add_column('contact', sa.Column('specialty', sa.String(length=50), nullable=True))
     op.add_column('contact', sa.Column('genre', sa.Integer(), nullable=True))
-    op.drop_column('cycle', 'position')
+    #op.drop_column('cycle', 'position')
     # ### end Alembic commands ###
 
 
