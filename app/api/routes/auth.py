@@ -12,8 +12,8 @@ from app.db.database import SessionLocal
 from app.models.password_reset import PasswordResetToken
 from app.models.user import User
 from app.schemas.auth import Token, ForgotPasswordRequest
-from app.services.email_service import send_reset_password_email
-from app.core.security import hash_password, verify_password, create_access_token
+from app.services.email_service import send_reset_password_email, send_verification_email
+from app.core.security import hash_password, verify_password, create_access_token, generate_verification_token
 from app.core.password_validation import validate_password_strength
 
 router = APIRouter(
@@ -166,10 +166,26 @@ def login(
         )
 
     if not user.is_verified:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Email not verified"
-        )
+        new_token = generate_verification_token()
+        user.verification_token = new_token
+        
+        db.commit()
+
+        try:
+            send_verification_email(user.email, new_token)
+            
+            # Lanzamos 403: Forbidden (Entendido, pero prohibido por falta de verificación)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Email not verified. Se ha enviado un nuevo enlace de activación."
+            )
+        except Exception:
+            # Si SendGrid falla aquí, no borramos al usuario (a diferencia de create_user)
+            # porque el usuario ya tiene su cuenta, solo le avisamos del error de envío.
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Email not verified. Error al reenviar correo, intenta más tarde."
+            )
 
     access_token = create_access_token(
         data={"sub": str(user.id_user)}
@@ -245,6 +261,10 @@ def reset_password(
         )
 
     user.password = hash_password(new_password)
+
+    if not user.is_verified:
+        user.is_verified = True
+        user.verification_token = None
 
     db.delete(reset)
     db.commit()
