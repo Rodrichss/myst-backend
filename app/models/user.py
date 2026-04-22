@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from app.db.base import Base
+from datetime import datetime
 
 class User(Base):
     __tablename__ = "users"
@@ -14,6 +15,7 @@ class User(Base):
 
     is_verified = Column(Boolean, default=False)
     verification_token = Column(String(255), nullable=True)
+    last_verification_sent = Column(DateTime, nullable=True)
 
     # Relationships
     clinical_history = relationship(

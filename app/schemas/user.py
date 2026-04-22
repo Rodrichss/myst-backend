@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
 from app.core.password_validation import validate_password_strength
+from datetime import datetime
 
 class UserCreate(BaseModel):
     name: str
@@ -20,6 +21,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     initials: Optional[str] = None
     picture: Optional[str] = None
+    last_verification_sent: Optional[datetime] = None
 
     class Config:
         from_attributes = True

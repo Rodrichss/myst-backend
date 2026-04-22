@@ -166,8 +166,17 @@ def login(
         )
 
     if not user.is_verified:
+
+        ahora = datetime.utcnow()
+        if user.last_verification_sent and ahora < user.last_verification_sent + timedelta(minutes=2):
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Por favor, espera 2 minutos antes de solicitar otro correo de verificación."
+            )
+        
         new_token = generate_verification_token()
         user.verification_token = new_token
+        user.last_verification_sent = ahora
         
         db.commit()
 
