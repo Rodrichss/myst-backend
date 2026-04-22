@@ -65,3 +65,14 @@ def format_date(date_val):
         except ValueError:
             return date_val
     return date_val.strftime("%d/%m/%Y")
+
+# dd/mm/yyyy
+def format_date_pdf(date_val):
+    if not date_val:
+        return "No especificado"
+    if isinstance(date_val, str):
+        try:
+            date_val = date.fromisoformat(date_val)
+        except ValueError:
+            return date_val
+    return date_val.strftime("%d-%m-%Y")
