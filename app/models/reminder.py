@@ -17,11 +17,13 @@ class Reminder(Base):
     title = Column(String(100))
     description = Column(String(255), nullable=True)
 
-    date = Column(Date)
-    time = Column(Time)
+    start_date = Column(Date, nullable=False)
+    start_time = Column(Time, nullable=True)
+    end_date = Column(Date, nullable=True)
+    end_time = Column(Time, nullable=True)
 
-    repeats = Column(String(50), nullable=True)      # daily, weekly, monthly
-    type = Column(String(50), nullable=True)         # medication, appointment
-    priority = Column(String(20), nullable=True)     # low, medium, high
+    type = Column(Boolean, nullable=True)            # medication, receipt
+    dosage = Column(String(100), nullable=True)     # solo si type = True (medicamento)
+    after_meal = Column(Boolean, nullable=True)     # solo si type = True (medicamento)
 
-    is_completed = Column(Boolean, default=False)
+    status = Column(Integer, default=0, nullable=False)

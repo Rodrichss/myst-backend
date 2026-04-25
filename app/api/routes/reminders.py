@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_db
-from app.db.database import SessionLocal
 from app.models.reminder import Reminder
 from app.models.user import User
 from app.models.contact import Contact
@@ -58,7 +57,7 @@ def get_my_reminders(
     reminders = (
         db.query(Reminder)
         .filter(Reminder.id_user == current_user.id_user)
-        .order_by(Reminder.date, Reminder.time)
+        .order_by(Reminder.start_date, Reminder.start_time)
         .all()
     )
 
