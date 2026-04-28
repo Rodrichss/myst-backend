@@ -94,10 +94,10 @@ def build_cycle_report_pdf(data, charts=None):
                 #day_elements.append(Spacer(1, 8))
 
             vital_signs_table = [
-                ["Signos vitales", ""],
-                ["Presión Arterial", f"{log.get('systolic_bp')}/{log.get('diastolic_bp')}" if log.get("systolic_bp") and log.get("diastolic_bp") else "No especificada"],
+                ["Signos Vitales", ""],
+                ["Presión Arterial", f"{log.get('systolic_bp')}/{log.get('diastolic_bp')} mmHg" if log.get("systolic_bp") and log.get("diastolic_bp") else "No especificada"],
                 ["Frecuencia Cardíaca", f"{log.get('heart_rate')} bpm" if log.get("heart_rate") else "No especificada"],
-                ["Temperatura corporal", f"{log.get('body_temperature')}°C" if log.get("body_temperature") else "No especificada"],
+                ["Temperatura Corporal", f"{log.get('body_temperature')} °C" if log.get("body_temperature") else "No especificada"],
                 ["Glucosa", f"{log.get('glycemia')} mg/dL" if log.get("glycemia") else "No especificada"],
             ]
 
