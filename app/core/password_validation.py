@@ -14,7 +14,7 @@ def validate_password_strength(password: str):
         if not re.search(r'[0-9]', password):
             raise HTTPException(status_code=400, detail='Password must contain at least one digit')
 
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        if not re.search(r'[_-¡!@#$%^&*(),.¿?":;/{}|<>]', password):
             raise HTTPException(status_code=400, detail='Password must contain at least one special character')
 
         return password
