@@ -8,7 +8,8 @@ from app.models.contact import Contact
 from app.schemas.reminder import (
     ReminderCreate,
     ReminderUpdate,
-    ReminderResponse
+    ReminderResponse,
+    MedicationCreate
 )
 
 router = APIRouter(
@@ -47,6 +48,46 @@ def create_reminder(
     db.refresh(reminder)
 
     return reminder
+
+# Create medication reminder (private)
+@router.post("/medication", response_model=ReminderResponse)
+def create_medication_reminder(
+    data: MedicationCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    reminder = Reminder(
+        id_user=current_user.id_user,
+        title=data.name,
+        start_date=data.start_date,
+        start_time=data.time,
+        end_date=data.end_date,
+        after_meal=data.after_meal,
+        dosage=data.dosage,
+        type=True,  # medicamento
+        status=0
+    )
+    db.add(reminder)
+    db.commit()
+    db.refresh(reminder)
+    return reminder
+
+# Get my medication reminders (private)
+@router.get("/medication", response_model=list[ReminderResponse])
+def get_my_medication_reminders(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    reminders = (
+        db.query(Reminder)
+        .filter(
+            Reminder.id_user == current_user.id_user,
+            Reminder.type == True
+        )
+        .order_by(Reminder.start_time)
+        .all()
+    )
+    return reminders
 
 # Get my reminders (private)
 @router.get("/me", response_model=list[ReminderResponse])

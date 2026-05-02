@@ -66,3 +66,11 @@ class ReminderResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class MedicationCreate(BaseModel):
+    name: str
+    start_date: datetime.date
+    time: datetime.time
+    end_date: Optional[datetime.date] = None
+    after_meal: bool
+    dosage: Optional[str] = None
