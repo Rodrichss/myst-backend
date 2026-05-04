@@ -22,16 +22,28 @@ def fix_db(db: Session = Depends(get_db)):
             db.rollback()
             summary["users_table"] = f"Error: {str(e)}"
 
-        # 2. TABLA 'contact' - Campos de perfil
+        # 2. TABLA 'contact' - Campos de perfil y eliminación de UNIQUE
         try:
+            # Añadir columnas si no existen (lo que ya tenías)
             db.execute(text('ALTER TABLE contact ADD COLUMN IF NOT EXISTS "about" VARCHAR(250);'))
             db.execute(text('ALTER TABLE contact ADD COLUMN IF NOT EXISTS "specialty" VARCHAR(50);'))
             db.execute(text('ALTER TABLE contact ADD COLUMN IF NOT EXISTS "genre" INTEGER;'))
+
+            # ELIMINAR RESTRICCIONES UNIQUE (Email y Phone)
+            # Usamos DROP CONSTRAINT IF EXISTS.
+            # Los nombres estándar de SQLAlchemy/Postgres suelen ser estos:
+            db.execute(text('ALTER TABLE contact DROP CONSTRAINT IF EXISTS contact_email_key;'))
+            db.execute(text('ALTER TABLE contact DROP CONSTRAINT IF EXISTS contact_phone_number_key;'))
+
+            # En algunos casos, si se crearon como índices simples:
+            db.execute(text('DROP INDEX IF EXISTS ix_contact_email;'))
+            db.execute(text('DROP INDEX IF EXISTS ix_contact_phone_number;'))
+
             db.commit()
-            summary["contact_table"] = "Columnas 'about', 'specialty', 'genre' añadidas."
+            summary["contact_table"] = "Columnas actualizadas y restricciones UNIQUE eliminadas."
         except Exception as e:
             db.rollback()
-            summary["contact_table"] = f"Error: {str(e)}"
+            summary["contact_table"] = f"Error en contact: {str(e)}"
 
         # 3. TABLA 'reminder' - ACTUALIZACIÓN COMPLETA
         try:
@@ -52,7 +64,7 @@ def fix_db(db: Session = Depends(get_db)):
             # AHORA SÍ, PONEMOS NOT NULL (Equivalente a tu modelo)
             db.execute(text('ALTER TABLE reminder ALTER COLUMN start_date SET NOT NULL;'))
             db.execute(text('ALTER TABLE reminder ALTER COLUMN status SET NOT NULL;'))
-            
+
             db.commit()
             summary["reminder_table"] = "Esquema de 'reminder' actualizado (start_date y status ahora son NOT NULL)."
         except Exception as e:

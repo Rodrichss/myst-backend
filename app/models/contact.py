@@ -20,8 +20,8 @@ class Contact(Base):
 
     name = Column(String(50))
     last_name = Column(String(50), nullable=True)
-    email = Column(String(100), unique=True, nullable=True)
-    phone_number = Column(String(20), unique=True, nullable=True)
+    email = Column(String(100), nullable=True)
+    phone_number = Column(String(20), nullable=True)
     address = Column(String(200), nullable=True)
 
     about = Column(String(250), nullable=True)
