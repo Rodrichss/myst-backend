@@ -1,6 +1,7 @@
 from app.utils.base_normalizer import normalize_text
 class CravingsEnum:
     MAP = {
+        0: "Todo",
         1: "Dulce",
         2: "Salado",
         3: "Chocolate",

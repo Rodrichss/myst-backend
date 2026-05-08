@@ -5,5 +5,6 @@ class MedicationCatalog(BaseCatalog):
         "analgesics": "Analgésicos",
         "antibiotics": "Antibióticos",
         "antidepressants": "Antidepresivos",
-        "hormonal": "Terapia hormonal"
+        "hormonal": "Terapia hormonal",
+        "other": "Otro"
     }

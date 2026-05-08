@@ -2,6 +2,7 @@ from .base import BaseCatalog
 
 class ExerciseCatalog(BaseCatalog):
     MAP = {
+        "none": "Ninguno",
         "running": "Correr",
         "swimming": "Nadar",
         "cycling": "Ciclismo",

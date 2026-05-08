@@ -1,6 +1,7 @@
 from app.utils.base_normalizer import normalize_text
 class DischargeEnum:
     MAP = {
+        0: "No sé",
         1: "Seco",
         2: "Pegajoso",
         3: "Cremoso",

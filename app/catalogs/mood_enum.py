@@ -1,6 +1,7 @@
 from app.utils.base_normalizer import normalize_text
 class MoodEnum:
     MAP =  {
+        0: "No sé",
         1: "Triste",
         2: "Enojada",
         3: "Neutral",
