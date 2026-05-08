@@ -45,31 +45,39 @@ def fix_db(db: Session = Depends(get_db)):
             db.rollback()
             summary["contact_table"] = f"Error en contact: {str(e)}"
 
-        # 3. TABLA 'reminder' - ACTUALIZACIÓN COMPLETA
+        # 3. TABLA 'reminder' - ACTUALIZACIÓN DE HORARIOS
         try:
-            # Añadimos columnas con IF NOT EXISTS
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "start_date" DATE;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "start_time" TIME;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "end_date" DATE;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "end_time" TIME;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "type" BOOLEAN;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "dosage" VARCHAR(100);'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "after_meal" BOOLEAN;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "status" INTEGER;'))
+            # A. Añadir nueva columna day_time
+            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "day_time" TIME;'))
 
-            # ASIGNAR VALORES POR DEFECTO a registros existentes para poder poner NOT NULL
+            # B. Eliminar columnas obsoletas (si existen)
+            db.execute(text('ALTER TABLE reminder DROP COLUMN IF EXISTS "start_time";'))
+            db.execute(text('ALTER TABLE reminder DROP COLUMN IF EXISTS "end_time";'))
+
+            # C. Asegurar integridad de campos obligatorios (start_date y status)
+            # Primero permitimos nulos para añadir si no existen, luego llenamos y bloqueamos
+            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "start_date" DATE;'))
+            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "status" INTEGER;'))
+            
+            # Rellenar datos vacíos para evitar error de NOT NULL
             db.execute(text("UPDATE reminder SET start_date = CURRENT_DATE WHERE start_date IS NULL;"))
             db.execute(text("UPDATE reminder SET status = 0 WHERE status IS NULL;"))
 
-            # AHORA SÍ, PONEMOS NOT NULL (Equivalente a tu modelo)
+            # Aplicar restricciones NOT NULL
             db.execute(text('ALTER TABLE reminder ALTER COLUMN start_date SET NOT NULL;'))
             db.execute(text('ALTER TABLE reminder ALTER COLUMN status SET NOT NULL;'))
 
+            # D. Otros campos opcionales
+            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "end_date" DATE;'))
+            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "type" BOOLEAN;'))
+            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "dosage" VARCHAR(100);'))
+            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "after_meal" BOOLEAN;'))
+
             db.commit()
-            summary["reminder_table"] = "Esquema de 'reminder' actualizado (start_date y status ahora son NOT NULL)."
+            summary["reminder_table"] = "Columnas start/end_time eliminadas. day_time añadida y esquema actualizado."
         except Exception as e:
             db.rollback()
-            summary["reminder_table"] = f"Error: {str(e)}"
+            summary["reminder_table"] = f"Error en reminder: {str(e)}"
 
         # 4. Otros cambios (clinical_history, cycle, etc.)
         try:
