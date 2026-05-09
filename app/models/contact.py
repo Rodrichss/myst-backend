@@ -37,5 +37,5 @@ class Contact(Base):
 
     address_ref = relationship(
         "Address",
-          back_populates="contacts"
+        back_populates="contacts"
         )

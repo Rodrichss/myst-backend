@@ -12,7 +12,7 @@ router = APIRouter(
 def fix_db(db: Session = Depends(get_db)):
     summary = {}
     try:
-        # 1. TABLA 'users' - Ampliar picture y añadir last_verification_sent
+        # 1. TABLA 'users'
         try:
             db.execute(text('ALTER TABLE users ALTER COLUMN picture TYPE VARCHAR(255);'))
             db.execute(text('ALTER TABLE users ADD COLUMN IF NOT EXISTS "last_verification_sent" TIMESTAMP;'))
@@ -22,46 +22,67 @@ def fix_db(db: Session = Depends(get_db)):
             db.rollback()
             summary["users_table"] = f"Error: {str(e)}"
 
-        # 2. TABLA 'contact' - Campos de perfil y eliminación de UNIQUE
+        # 2. NUEVA TABLA 'address'
         try:
-            # Añadir columnas si no existen (lo que ya tenías)
+            db.execute(text('''
+                CREATE TABLE IF NOT EXISTS address (
+                    id_address SERIAL PRIMARY KEY,
+                    id_user INTEGER NOT NULL REFERENCES users(id_user) ON DELETE CASCADE,
+                    name VARCHAR(100) NOT NULL,
+                    street VARCHAR(200) NOT NULL,
+                    neighborhood VARCHAR(100),
+                    city VARCHAR(100) NOT NULL,
+                    state VARCHAR(100) NOT NULL,
+                    zip_code VARCHAR(10),
+                    phone_number VARCHAR(20),
+                    is_selected BOOLEAN NOT NULL DEFAULT FALSE
+                );
+            '''))
+            # Crear índice para búsqueda rápida por usuario
+            db.execute(text('CREATE INDEX IF NOT EXISTS ix_address_id_address ON address (id_address);'))
+            db.commit()
+            summary["address_table"] = "Tabla 'address' creada exitosamente."
+        except Exception as e:
+            db.rollback()
+            summary["address_table"] = f"Error: {str(e)}"
+
+        # 3. TABLA 'contact' - Actualización y Relación con Address
+        try:
             db.execute(text('ALTER TABLE contact ADD COLUMN IF NOT EXISTS "about" VARCHAR(250);'))
             db.execute(text('ALTER TABLE contact ADD COLUMN IF NOT EXISTS "specialty" VARCHAR(50);'))
             db.execute(text('ALTER TABLE contact ADD COLUMN IF NOT EXISTS "genre" INTEGER;'))
+            
+            # Añadir FK a address si no existe
+            db.execute(text('ALTER TABLE contact ADD COLUMN IF NOT EXISTS "id_address" INTEGER REFERENCES address(id_address) ON DELETE SET NULL;'))
 
-            # ELIMINAR RESTRICCIONES UNIQUE (Email y Phone)
-            # Usamos DROP CONSTRAINT IF EXISTS.
-            # Los nombres estándar de SQLAlchemy/Postgres suelen ser estos:
+            # Eliminar restricciones UNIQUE
             db.execute(text('ALTER TABLE contact DROP CONSTRAINT IF EXISTS contact_email_key;'))
             db.execute(text('ALTER TABLE contact DROP CONSTRAINT IF EXISTS contact_phone_number_key;'))
-
-            # En algunos casos, si se crearon como índices simples:
             db.execute(text('DROP INDEX IF EXISTS ix_contact_email;'))
             db.execute(text('DROP INDEX IF EXISTS ix_contact_phone_number;'))
 
             db.commit()
-            summary["contact_table"] = "Columnas actualizadas y restricciones UNIQUE eliminadas."
+            summary["contact_table"] = "Campos actualizados, restricciones eliminadas y relación con 'address' añadida."
         except Exception as e:
             db.rollback()
             summary["contact_table"] = f"Error en contact: {str(e)}"
 
-        # 3. Intentar convertir la columna 'type' a BOOLEAN si existe como VARCHAR
+        # 4. TABLA 'reminder' - BOOLEAN fix
         try:
-            # Usamos USING para decirle a Postgres cómo convertir el texto a booleano
-            # Esto asume que 'true'/'1' -> True y 'false'/'0' -> False
             db.execute(text('''
-                ALTER TABLE reminder
-                ALTER COLUMN type TYPE BOOLEAN
+                ALTER TABLE reminder 
+                ALTER COLUMN type TYPE BOOLEAN 
                 USING (type::boolean);
             '''))
-            summary["reminder_type_fix"] = "Columna 'type' convertida de VARCHAR a BOOLEAN."
+            db.commit()
+            summary["reminder_type_fix"] = "Columna 'type' convertida a BOOLEAN."
         except Exception as e:
-            # Si la columna no existe aún, la creamos de una vez como BOOLEAN
             db.rollback()
             db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "type" BOOLEAN;'))
-            summary["reminder_type_fix"] = "Columna 'type' creada como BOOLEAN."
+            db.commit()
+            summary["reminder_type_fix"] = "Columna 'type' verificada/creada como BOOLEAN."
 
-        # 4. Otros cambios (clinical_history, cycle, etc.)
+        # 5. OTROS (clinical_history, cycle)
         try:
             db.execute(text('ALTER TABLE clinical_history ADD COLUMN IF NOT EXISTS "last_period_date" DATE;'))
             db.execute(text('ALTER TABLE clinical_history ADD COLUMN IF NOT EXISTS "regularity" VARCHAR(10);'))
