@@ -12,6 +12,7 @@ from app.api.routes import (
     clinical_history,
     cycles,
     contacts,
+    addresses,
     reminders,
     daily_log,
     database
@@ -35,6 +36,7 @@ app = FastAPI(
 app.include_router(users.router)
 app.include_router(auth.router)
 app.include_router(contacts.router)
+app.include_router(addresses.router)
 app.include_router(reminders.router)
 app.include_router(clinical_history.router)
 app.include_router(cycles.router)

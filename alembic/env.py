@@ -15,6 +15,7 @@ from app.models.cycle import Cycle
 from app.models.daily_log import DailyLog
 from app.models.password_reset import PasswordResetToken
 from app.models.reminder import Reminder
+from app.models.address import Address
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
