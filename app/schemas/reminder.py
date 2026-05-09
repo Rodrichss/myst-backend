@@ -10,10 +10,8 @@ class ReminderCreate(BaseModel):
     description: Optional[str] = None
 
     start_date: datetime.date
-    start_time: Optional[datetime.time] = None
     end_date: Optional[datetime.date] = None
-    end_time: Optional[datetime.time] = None
-
+    day_time: Optional[datetime.time] = None
 
     # type: False = receta, True = medicamento
     type: Optional[bool] = None
@@ -28,49 +26,35 @@ class ReminderCreate(BaseModel):
             raise ValueError("end_date no puede ser anterior a start_date")
         return self
 
-
 class ReminderUpdate(BaseModel):
     id_contact: Optional[int] = None
     title: Optional[str] = None
     description: Optional[str] = None
- 
+
     start_date: Optional[datetime.date] = None
-    start_time: Optional[datetime.time] = None
     end_date: Optional[datetime.date] = None
-    end_time: Optional[datetime.time] = None
- 
+    day_time: Optional[datetime.time] = None
+
     type: Optional[bool] = None
     dosage: Optional[str] = None
     after_meal: Optional[bool] = None
     status: Optional[int] = None
 
-
 class ReminderResponse(BaseModel):
     id_reminder: int
-    id_user: int
     id_contact: Optional[int] = None
- 
+
     title: str
     description: Optional[str] = None
- 
+
     start_date: datetime.date
-    start_time: Optional[datetime.time] = None
     end_date: Optional[datetime.date] = None
-    end_time: Optional[datetime.time] = None
- 
+    day_time: Optional[datetime.time] = None
+
     type: Optional[bool] = None
     dosage: Optional[str] = None
     after_meal: Optional[bool] = None
     status: int
 
-
     class Config:
         from_attributes = True
-
-class MedicationCreate(BaseModel):
-    name: str
-    start_date: datetime.date
-    time: datetime.time
-    end_date: Optional[datetime.date] = None
-    after_meal: bool
-    dosage: Optional[str] = None

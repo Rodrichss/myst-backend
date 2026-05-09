@@ -18,9 +18,8 @@ class Reminder(Base):
     description = Column(String(255), nullable=True)
 
     start_date = Column(Date, nullable=False)
-    start_time = Column(Time, nullable=True)
     end_date = Column(Date, nullable=True)
-    end_time = Column(Time, nullable=True)
+    day_time = Column(Time, nullable=True)
 
     type = Column(Boolean, nullable=True)            # medication, receipt
     dosage = Column(String(100), nullable=True)     # solo si type = True (medicamento)

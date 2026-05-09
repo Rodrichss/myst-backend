@@ -9,7 +9,6 @@ from app.schemas.reminder import (
     ReminderCreate,
     ReminderUpdate,
     ReminderResponse,
-    MedicationCreate
 )
 
 router = APIRouter(
@@ -52,16 +51,16 @@ def create_reminder(
 # Create medication reminder (private)
 @router.post("/medication", response_model=ReminderResponse)
 def create_medication_reminder(
-    data: MedicationCreate,
+    data: ReminderCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     reminder = Reminder(
         id_user=current_user.id_user,
-        title=data.name,
+        title=data.title,
         start_date=data.start_date,
-        start_time=data.time,
         end_date=data.end_date,
+        day_time=data.day_time,
         after_meal=data.after_meal,
         dosage=data.dosage,
         type=True,  # medicamento
@@ -84,9 +83,40 @@ def get_my_medication_reminders(
             Reminder.id_user == current_user.id_user,
             Reminder.type == True
         )
-        .order_by(Reminder.start_time)
+        .order_by(Reminder.start_date, Reminder.day_time)
         .all()
     )
+    return reminders
+
+# Get reminders by contact (private)
+@router.get("/contact/{id_contact}", response_model=list[ReminderResponse])
+def get_reminders_by_contact(
+    id_contact: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # 1. Verificar primero que el contacto pertenezca al usuario
+    contact = (
+        db.query(Contact)
+        .filter(
+            Contact.id_contact == id_contact,
+            Contact.id_user == current_user.id_user
+        )
+        .first()
+    )
+
+    if not contact:
+        raise HTTPException(404, "Contact not found or does not belong to user")
+
+    # 2. Obtener los recordatorios asociados a ese contacto
+    # Ordenados por fecha de inicio y hora (del más próximo al más lejano)
+    reminders = (
+        db.query(Reminder)
+        .filter(Reminder.id_contact == id_contact)
+        .order_by(Reminder.start_date.asc(), Reminder.day_time.asc())
+        .all()
+    )
+
     return reminders
 
 # Get my reminders (private)
@@ -98,7 +128,7 @@ def get_my_reminders(
     reminders = (
         db.query(Reminder)
         .filter(Reminder.id_user == current_user.id_user)
-        .order_by(Reminder.start_date, Reminder.start_time)
+        .order_by(Reminder.start_date, Reminder.day_time)
         .all()
     )
 

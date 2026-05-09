@@ -45,31 +45,21 @@ def fix_db(db: Session = Depends(get_db)):
             db.rollback()
             summary["contact_table"] = f"Error en contact: {str(e)}"
 
-        # 3. TABLA 'reminder' - ACTUALIZACIÓN COMPLETA
+        # 3. Intentar convertir la columna 'type' a BOOLEAN si existe como VARCHAR
         try:
-            # Añadimos columnas con IF NOT EXISTS
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "start_date" DATE;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "start_time" TIME;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "end_date" DATE;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "end_time" TIME;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "type" BOOLEAN;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "dosage" VARCHAR(100);'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "after_meal" BOOLEAN;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "status" INTEGER;'))
-
-            # ASIGNAR VALORES POR DEFECTO a registros existentes para poder poner NOT NULL
-            db.execute(text("UPDATE reminder SET start_date = CURRENT_DATE WHERE start_date IS NULL;"))
-            db.execute(text("UPDATE reminder SET status = 0 WHERE status IS NULL;"))
-
-            # AHORA SÍ, PONEMOS NOT NULL (Equivalente a tu modelo)
-            db.execute(text('ALTER TABLE reminder ALTER COLUMN start_date SET NOT NULL;'))
-            db.execute(text('ALTER TABLE reminder ALTER COLUMN status SET NOT NULL;'))
-
-            db.commit()
-            summary["reminder_table"] = "Esquema de 'reminder' actualizado (start_date y status ahora son NOT NULL)."
+            # Usamos USING para decirle a Postgres cómo convertir el texto a booleano
+            # Esto asume que 'true'/'1' -> True y 'false'/'0' -> False
+            db.execute(text('''
+                ALTER TABLE reminder
+                ALTER COLUMN type TYPE BOOLEAN
+                USING (type::boolean);
+            '''))
+            summary["reminder_type_fix"] = "Columna 'type' convertida de VARCHAR a BOOLEAN."
         except Exception as e:
+            # Si la columna no existe aún, la creamos de una vez como BOOLEAN
             db.rollback()
-            summary["reminder_table"] = f"Error: {str(e)}"
+            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "type" BOOLEAN;'))
+            summary["reminder_type_fix"] = "Columna 'type' creada como BOOLEAN."
 
         # 4. Otros cambios (clinical_history, cycle, etc.)
         try:
