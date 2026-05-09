@@ -58,7 +58,7 @@ def fix_db(db: Session = Depends(get_db)):
             # Primero permitimos nulos para añadir si no existen, luego llenamos y bloqueamos
             db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "start_date" DATE;'))
             db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "status" INTEGER;'))
-            
+
             # Rellenar datos vacíos para evitar error de NOT NULL
             db.execute(text("UPDATE reminder SET start_date = CURRENT_DATE WHERE start_date IS NULL;"))
             db.execute(text("UPDATE reminder SET status = 0 WHERE status IS NULL;"))
