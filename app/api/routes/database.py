@@ -45,39 +45,21 @@ def fix_db(db: Session = Depends(get_db)):
             db.rollback()
             summary["contact_table"] = f"Error en contact: {str(e)}"
 
-        # 3. TABLA 'reminder' - ACTUALIZACIÓN DE HORARIOS
-        try:
-            # A. Añadir nueva columna day_time
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "day_time" TIME;'))
-
-            # B. Eliminar columnas obsoletas (si existen)
-            db.execute(text('ALTER TABLE reminder DROP COLUMN IF EXISTS "start_time";'))
-            db.execute(text('ALTER TABLE reminder DROP COLUMN IF EXISTS "end_time";'))
-
-            # C. Asegurar integridad de campos obligatorios (start_date y status)
-            # Primero permitimos nulos para añadir si no existen, luego llenamos y bloqueamos
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "start_date" DATE;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "status" INTEGER;'))
-
-            # Rellenar datos vacíos para evitar error de NOT NULL
-            db.execute(text("UPDATE reminder SET start_date = CURRENT_DATE WHERE start_date IS NULL;"))
-            db.execute(text("UPDATE reminder SET status = 0 WHERE status IS NULL;"))
-
-            # Aplicar restricciones NOT NULL
-            db.execute(text('ALTER TABLE reminder ALTER COLUMN start_date SET NOT NULL;'))
-            db.execute(text('ALTER TABLE reminder ALTER COLUMN status SET NOT NULL;'))
-
-            # D. Otros campos opcionales
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "end_date" DATE;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "type" BOOLEAN;'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "dosage" VARCHAR(100);'))
-            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "after_meal" BOOLEAN;'))
-
-            db.commit()
-            summary["reminder_table"] = "Columnas start/end_time eliminadas. day_time añadida y esquema actualizado."
-        except Exception as e:
-            db.rollback()
-            summary["reminder_table"] = f"Error en reminder: {str(e)}"
+        # 3. Intentar convertir la columna 'type' a BOOLEAN si existe como VARCHAR
+    try:
+        # Usamos USING para decirle a Postgres cómo convertir el texto a booleano
+        # Esto asume que 'true'/'1' -> True y 'false'/'0' -> False
+        db.execute(text('''
+            ALTER TABLE reminder
+            ALTER COLUMN type TYPE BOOLEAN
+            USING (type::boolean);
+        '''))
+        summary["reminder_type_fix"] = "Columna 'type' convertida de VARCHAR a BOOLEAN."
+    except Exception as e:
+        # Si la columna no existe aún, la creamos de una vez como BOOLEAN
+        db.rollback()
+        db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "type" BOOLEAN;'))
+        summary["reminder_type_fix"] = "Columna 'type' creada como BOOLEAN."
 
         # 4. Otros cambios (clinical_history, cycle, etc.)
         try:
