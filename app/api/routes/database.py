@@ -46,20 +46,20 @@ def fix_db(db: Session = Depends(get_db)):
             summary["contact_table"] = f"Error en contact: {str(e)}"
 
         # 3. Intentar convertir la columna 'type' a BOOLEAN si existe como VARCHAR
-    try:
-        # Usamos USING para decirle a Postgres cómo convertir el texto a booleano
-        # Esto asume que 'true'/'1' -> True y 'false'/'0' -> False
-        db.execute(text('''
-            ALTER TABLE reminder
-            ALTER COLUMN type TYPE BOOLEAN
-            USING (type::boolean);
-        '''))
-        summary["reminder_type_fix"] = "Columna 'type' convertida de VARCHAR a BOOLEAN."
-    except Exception as e:
-        # Si la columna no existe aún, la creamos de una vez como BOOLEAN
-        db.rollback()
-        db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "type" BOOLEAN;'))
-        summary["reminder_type_fix"] = "Columna 'type' creada como BOOLEAN."
+        try:
+            # Usamos USING para decirle a Postgres cómo convertir el texto a booleano
+            # Esto asume que 'true'/'1' -> True y 'false'/'0' -> False
+            db.execute(text('''
+                ALTER TABLE reminder
+                ALTER COLUMN type TYPE BOOLEAN
+                USING (type::boolean);
+            '''))
+            summary["reminder_type_fix"] = "Columna 'type' convertida de VARCHAR a BOOLEAN."
+        except Exception as e:
+            # Si la columna no existe aún, la creamos de una vez como BOOLEAN
+            db.rollback()
+            db.execute(text('ALTER TABLE reminder ADD COLUMN IF NOT EXISTS "type" BOOLEAN;'))
+            summary["reminder_type_fix"] = "Columna 'type' creada como BOOLEAN."
 
         # 4. Otros cambios (clinical_history, cycle, etc.)
         try:
