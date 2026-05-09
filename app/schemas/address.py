@@ -27,7 +27,6 @@ class AddressUpdate(BaseModel):
 
 class AddressResponse(BaseModel):
     id_address: int
-    id_user: int
     name: str
     street: str
     neighborhood: Optional[str] = None
