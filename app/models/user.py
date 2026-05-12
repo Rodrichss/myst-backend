@@ -48,3 +48,9 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan"
     )
+
+    lab_studies = relationship(
+        "LabStudy",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )

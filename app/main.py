@@ -15,6 +15,7 @@ from app.api.routes import (
     addresses,
     reminders,
     daily_log,
+    lab_results,
     database
 )
 
@@ -43,6 +44,7 @@ app.include_router(cycles.router)
 app.include_router(daily_log.router)
 app.include_router(assistant.router)
 app.include_router(reports.router)
+app.include_router(lab_results.router)
 app.include_router(database.router)
 
 @app.get("/")
