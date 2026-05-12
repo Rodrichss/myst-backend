@@ -94,6 +94,37 @@ def fix_db(db: Session = Depends(get_db)):
             db.rollback()
             summary["others"] = f"Error: {str(e)}"
 
+        # 6. NUEVAS TABLAS 'lab_studies' y 'lab_results'
+        try:
+            db.execute(text('''
+                CREATE TABLE IF NOT EXISTS lab_studies (
+                    id_study SERIAL PRIMARY KEY,
+                    id_user INTEGER NOT NULL REFERENCES users(id_user) ON DELETE CASCADE,
+                    laboratory_name VARCHAR(100),
+                    test_date DATE NOT NULL,
+                    created_at TIMESTAMP DEFAULT NOW()
+                );
+            '''))
+            db.execute(text('CREATE INDEX IF NOT EXISTS ix_lab_studies_id_study ON lab_studies (id_study);'))
+
+            db.execute(text('''
+                CREATE TABLE IF NOT EXISTS lab_results (
+                    id_result SERIAL PRIMARY KEY,
+                    id_study INTEGER NOT NULL REFERENCES lab_studies(id_study) ON DELETE CASCADE,
+                    parameter VARCHAR(100) NOT NULL,
+                    value FLOAT NOT NULL,
+                    unit VARCHAR(20),
+                    reference_range VARCHAR(100)
+                );
+            '''))
+            db.execute(text('CREATE INDEX IF NOT EXISTS ix_lab_results_id_result ON lab_results (id_result);'))
+
+            db.commit()
+            summary["lab_tables"] = "Tablas 'lab_studies' y 'lab_results' creadas exitosamente."
+        except Exception as e:
+            db.rollback()
+            summary["lab_tables"] = f"Error: {str(e)}"
+
         return {
             "status": "success",
             "message": "Sincronización de base de datos completada",
