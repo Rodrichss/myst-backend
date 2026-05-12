@@ -6,6 +6,7 @@ from app.core.dependencies import get_current_user, get_db
 
 from app.models.user import User
 from app.models.contact import Contact
+from app.models.address import Address
 from app.schemas.contact import (
     ContactCreate,
     ContactUpdate,
@@ -17,6 +18,19 @@ router = APIRouter(
     tags=["Contacts"]
 )
 
+def _validate_address(db: Session, id_address: int, id_user: int) -> None:
+    """Verifica que la dirección exista y pertenezca al usuario."""
+    address = db.query(Address).filter(
+        Address.id_address == id_address,
+        Address.id_user == id_user
+    ).first()
+    if not address:
+        raise HTTPException(
+            status_code=404,
+            detail="Address not found or does not belong to this user"
+        )
+
+
 # Create contact (private)
 @router.post("/", response_model=ContactResponse)
 def create_contact(
@@ -24,6 +38,9 @@ def create_contact(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    if data.id_address is not None:
+        _validate_address(db, data.id_address, current_user.id_user)
+
     contact = Contact(
         **data.dict(),
         id_user=current_user.id_user
@@ -95,6 +112,10 @@ def update_my_contact(
             status_code=404,
             detail="Contact not found"
         )
+    
+    if data.id_address is not None:
+        _validate_address(db, data.id_address, current_user.id_user)
+
 
     for key, value in data.dict(exclude_unset=True).items():
         setattr(contact, key, value)
