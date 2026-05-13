@@ -25,8 +25,8 @@ def _parse_date(raw: str) -> date:
         # El modelo devolvió una fecha futura: retroceder un año
         parsed = parsed.replace(year=parsed.year - 1)
     return parsed
- 
- 
+
+
 def _get_or_create_history(db: Session, user_id: int) -> ClinicalHistory:
     history = db.query(ClinicalHistory).filter(
         ClinicalHistory.id_user == user_id
@@ -45,20 +45,20 @@ def log_day_from_chat(
     current_user: User = Depends(get_current_user)
 ):
     extracted = analyze_daily_message(data.message)
- 
+
     if "error" in extracted:
         raise HTTPException(status_code=400, detail=extracted["error"])
-    
+
     # Normalizar keys a minúsculas por si el modelo las devuelve en mayúsculas
     extracted = {k.lower(): v for k, v in extracted.items()}
- 
+
     # ── Parsear fecha ──────────────────────────────────────────────────────────
     raw_date = extracted.get("date")
     event_date: date = _parse_date(raw_date) if raw_date else date.today()
- 
+
     intent = extracted.get("intent", "log_symptoms")
     history = _get_or_create_history(db, current_user.id_user)
- 
+
     # ── Manejar intents de ciclo ───────────────────────────────────────────────
     if intent == "start_period":
         # Verificar que no exista ya un ciclo que cubra esta fecha
@@ -67,11 +67,11 @@ def log_day_from_chat(
             Cycle.start_date <= event_date,
             (Cycle.end_date == None) | (Cycle.end_date >= event_date)
         ).first()
- 
+
         if overlapping:
             intent = "log_symptoms"
             cycle = overlapping
- 
+
         # Cerrar el ciclo abierto más reciente si lo hay (sin end_date)
         open_cycle = (
             db.query(Cycle)
@@ -97,9 +97,9 @@ def log_day_from_chat(
         db.add(new_cycle)
         db.commit()
         db.refresh(new_cycle)
-        update_cycle_stats(db, history.id_history)  
+        update_cycle_stats(db, history.id_history)
         cycle = new_cycle
- 
+
     elif intent == "end_period":
         # Buscar el ciclo abierto más reciente
         open_cycle = (
@@ -112,13 +112,13 @@ def log_day_from_chat(
             .order_by(Cycle.start_date.desc())
             .first()
         )
- 
+
         if not open_cycle:
             raise HTTPException(
                 status_code=400,
                 detail="No hay un ciclo abierto para cerrar en esa fecha."
             )
- 
+
         # Validar coherencia de fechas
         if event_date < open_cycle.start_date:
             raise HTTPException(
@@ -128,13 +128,13 @@ def log_day_from_chat(
                     f"({open_cycle.start_date}). Verifica la fecha."
                 )
             )
- 
+
         open_cycle.end_date = event_date
         db.commit()
         db.refresh(open_cycle)
-        update_cycle_stats(db, history.id_history)  
+        update_cycle_stats(db, history.id_history)
         cycle = open_cycle
- 
+
     else:  # log_symptoms
         # Buscar el ciclo que contenga la fecha del log
         cycle = (
@@ -146,7 +146,7 @@ def log_day_from_chat(
             )
             .first()
         )
- 
+
         if not cycle:
             raise HTTPException(
                 status_code=400,
@@ -155,25 +155,25 @@ def log_day_from_chat(
                     "Registra primero el inicio de tu periodo."
                 )
             )
- 
+
     # ── Crear el daily log ─────────────────────────────────────────────────────
     valid_columns = set(DailyLog.__table__.columns.keys()) - {"id_log", "id_cycle", "date"}
- 
+
     log_data = {
         key: value
         for key, value in extracted.items()
         if key in valid_columns
     }
- 
+
     # symptoms en el modelo es String; si Gemini devuelve lista, unirla
     if "symptoms" in log_data and isinstance(log_data["symptoms"], list):
         log_data["symptoms"] = ", ".join(log_data["symptoms"])
-    
-    # Si el intent fue start_period (original o degradado), 
+
+    # Si el intent fue start_period (original o degradado),
     # garantizar al menos flujo ligero
     if extracted.get("intent") == "start_period" and "menstrual_flow" not in log_data:
         log_data["menstrual_flow"] = 1
- 
+
     log = DailyLog(
         id_cycle=cycle.id_cycle,
         date=event_date,
@@ -182,11 +182,11 @@ def log_day_from_chat(
     db.add(log)
     db.commit()
     db.refresh(log)
- 
+
     return {
-        "message": "Registro guardado correctamente",
-        "intent": intent,
-        "date": event_date.isoformat(),
-        "cycle_id": cycle.id_cycle,
-        "data_extracted": extracted,
-    }
+    "message": "Registro guardado correctamente",
+    "intent": intent,
+    "date": event_date.isoformat(),
+    "cycle_id": cycle.id_cycle,
+    "data_extracted": extracted, # 'extracted' ya tiene response e is_red_flag
+}
