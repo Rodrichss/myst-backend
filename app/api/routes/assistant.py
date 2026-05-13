@@ -157,6 +157,12 @@ def log_day_from_chat(
             )
 
     # ── Crear el daily log ─────────────────────────────────────────────────────
+    # 1. Buscamos si ya existe un log para ese ciclo y esa fecha
+    existing_log = db.query(DailyLog).filter(
+        DailyLog.id_cycle == cycle.id_cycle,
+        DailyLog.date == event_date
+    ).first()
+
     valid_columns = set(DailyLog.__table__.columns.keys()) - {"id_log", "id_cycle", "date"}
 
     log_data = {
@@ -174,17 +180,27 @@ def log_day_from_chat(
     if extracted.get("intent") == "start_period" and "menstrual_flow" not in log_data:
         log_data["menstrual_flow"] = 1
 
-    log = DailyLog(
-        id_cycle=cycle.id_cycle,
-        date=event_date,
-        **log_data
-    )
-    db.add(log)
-    db.commit()
-    db.refresh(log)
+    if existing_log:
+        # 2. Si existe, lo actualizamos con los nuevos datos de Gemini
+        for key, value in log_data.items():
+            setattr(existing_log, key, value)
+        db.commit()
+        db.refresh(existing_log)
+        status_msg = "Registro actualizado correctamente"
+    else:
+        # 3. Si no existe, lo creamos
+        new_log = DailyLog(
+            id_cycle=cycle.id_cycle,
+            date=event_date,
+            **log_data
+        )
+        db.add(new_log)
+        db.commit()
+        db.refresh(new_log)
+        status_msg = "Registro guardado correctamente"
 
     return {
-    "message": "Registro guardado correctamente",
+    "message": status_msg,
     "intent": intent,
     "date": event_date.isoformat(),
     "cycle_id": cycle.id_cycle,
