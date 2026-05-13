@@ -94,7 +94,24 @@ def analyze_daily_message(message: str) -> dict:
                 "response_mime_type": "application/json", # Esto fuerza a Gemini a dar JSON puro
             }
         )
-        return parse_response(response)
+
+        # Obtenemos el JSON estructurado de la IA
+        raw_result = parse_response(response)
+
+        # --- PROCESO DE APLANADO (Flattening) ---
+        # El backend espera los campos en la raíz del objeto, no dentro de "data"
+        final_response = {}
+
+        # 1. Sacamos todo lo que está dentro de "data" (cramps, mood, intent, etc.) a la raíz
+        if "data" in raw_result and isinstance(raw_result["data"], dict):
+            final_response.update(raw_result["data"])
+
+        # 2. Agregamos la respuesta empática y el flag de seguridad a la raíz también
+        final_response["is_red_flag"] = raw_result.get("is_red_flag", False)
+        final_response["response"] = raw_result.get("response", "Registro completado. 💕")
+
+        # Devolvemos un solo objeto plano que el backend sí entenderá
+        return final_response
     except Exception as e:
         return {"error": str(e)}
 
