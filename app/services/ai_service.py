@@ -19,7 +19,7 @@ Return a JSON with three main keys:
 1. "data": {
     - All extracted fields go here.
     - All JSON keys must be lowercase (intent, date, stress, etc.)
-    - Omit any field not mentioned by the user.
+    - Omit and IGNORE any field not mentioned by the user.
 
     INTENT (required):
     - start_period: "me bajó", "empezó mi periodo", "me llegó", "inicio de ciclo", "me vino"
@@ -64,7 +64,7 @@ Return a JSON with three main keys:
     water_consumption: liters (float) | sleep_time: HH:MM | exercise_time: HH:MM
     sexual_penetration: true/false | anticonceptive_use: true/false
 }
-2. "is_red_flag": boolean (true if symptoms like hemorrhaging, fainting, or extreme pain are detected)
+2. "is_red_flag": boolean (true if symptoms like hemorrhaging, fainting, or extreme pain are detected, or even death wishes)
 3. "response": "A short, empathetic message in SPANISH. Include a self-care tip, a contextual question about stress/lifestyle, or a medical suggestion if is_red_flag is true. NEVER give a medical diagnosis."
 """
 
