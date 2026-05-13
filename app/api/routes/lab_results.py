@@ -14,7 +14,8 @@ from app.schemas.lab_result import (
     LabResultResponse,
     LabResultUpdate,
     ParameterEvolutionResponse,
-    ParameterDataPoint
+    ParameterDataPoint,
+    TrendEnum
 )
 
 router = APIRouter(
@@ -113,17 +114,33 @@ def get_parameter_evolution(
             detail=f"No se encontraron resultados para el parámetro '{parameter}'"
         )
 
-    data_points = [
-        ParameterDataPoint(
-            test_date=study.test_date,
-            value=result.value,
-            unit=result.unit,
-            reference_range=result.reference_range,
-            laboratory_name=study.laboratory_name,
-            id_study=study.id_study
+    data_points = []
+    previous_value = None
+
+    for result, study in results:
+        # Lógica de tendencia
+        current_trend = TrendEnum.NONE
+        if previous_value is not None:
+            if result.value > previous_value:
+                current_trend = TrendEnum.UP
+            elif result.value < previous_value:
+                current_trend = TrendEnum.DOWN
+            else:
+                current_trend = TrendEnum.STABLE
+
+        data_points.append(
+            ParameterDataPoint(
+                test_date=study.test_date,
+                value=result.value,
+                unit=result.unit,
+                reference_range=result.reference_range,
+                laboratory_name=study.laboratory_name,
+                id_study=study.id_study,
+                trend=current_trend
+            )
         )
-        for result, study in results
-    ]
+        # Actualizamos para la siguiente iteración
+        previous_value = result.value
 
     return ParameterEvolutionResponse(
         parameter=parameter,

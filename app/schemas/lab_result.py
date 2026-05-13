@@ -1,8 +1,14 @@
 # app/api/schemas/lab_result.py
+from enum import Enum
 from pydantic import BaseModel, Field
 from datetime import date, datetime
 from typing import List, Optional
 
+class TrendEnum(str, Enum):
+    UP = "UP"
+    DOWN = "DOWN"
+    STABLE = "STABLE"
+    NONE = "NONE"
 
 class LabResultBase(BaseModel):
     parameter: str
@@ -43,6 +49,7 @@ class ParameterDataPoint(BaseModel):
     reference_range: Optional[str] = None
     laboratory_name: Optional[str] = None
     id_study: int
+    trend: Optional[TrendEnum] = TrendEnum.NONE  # Se calculará en el endpoint
 
     class Config:
         from_attributes = True
