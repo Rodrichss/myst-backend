@@ -34,6 +34,11 @@ Return a JSON with three main keys:
     - Never return a future date
     - Format: YYYY-MM-DD
 
+    CRITICAL RULES:
+    - NEVER hallucinate or assume fields.
+    - If the user does not explicitly mention a symptom, DO NOT include it in the symptoms array.
+    - If the user expresses self-harm or crisis, set "is_red_flag": true, provide the emergency response, but keep the "data" fields empty or only with the mentioned intent.
+
     FIELDS and valid values:
     menstrual_flow: 0=Nulo 1=Ligero 2=Medio 3=Abundante 4=Goteo
     mood: 1=Triste 2=Enojada 3=Neutral 4=Feliz 5=MuyFeliz 6=CambiosDeHumor
@@ -64,7 +69,7 @@ Return a JSON with three main keys:
     water_consumption: liters (float) | sleep_time: HH:MM | exercise_time: HH:MM
     sexual_penetration: true/false | anticonceptive_use: true/false
 }
-2. "is_red_flag": boolean (true if symptoms like hemorrhaging, fainting, or extreme pain are detected, or even death wishes)
+2. "is_red_flag": boolean (true if symptoms like hemorrhaging, fainting, or extreme pain are detected, death wishes OR thoughts of self-harm/suicide)
 3. "response": "A short, empathetic message in SPANISH. Include a self-care tip, a contextual question about stress/lifestyle, or a medical suggestion if is_red_flag is true. NEVER give a medical diagnosis."
 """
 
