@@ -188,6 +188,8 @@ def log_day_from_chat(
         for key, value in log_data.items():
             setattr(existing_log, key, value)
         status_msg = "Registro actualizado correctamente"
+        db.commit()
+        db.refresh(existing_log)
     else:
         # 3. Si no existe, lo creamos
         new_log = DailyLog(
@@ -196,10 +198,9 @@ def log_day_from_chat(
             **log_data
         )
         db.add(new_log)
+        db.commit()
+        db.refresh(new_log)
         status_msg = "Registro guardado correctamente"
-
-    db.commit()
-    db.refresh(new_log)
 
     return {
     "message": status_msg,
