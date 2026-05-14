@@ -59,6 +59,8 @@ def log_day_from_chat(
     intent = extracted.get("intent", "log_symptoms")
     history = _get_or_create_history(db, current_user.id_user)
 
+    cycle = None
+
     # ── Manejar intents de ciclo ───────────────────────────────────────────────
     if intent == "start_period":
         # Verificar que no exista ya un ciclo que cubra esta fecha
@@ -73,32 +75,33 @@ def log_day_from_chat(
             cycle = overlapping
 
         # Cerrar el ciclo abierto más reciente si lo hay (sin end_date)
-        open_cycle = (
-            db.query(Cycle)
-            .filter(
-                Cycle.id_history == history.id_history,
-                Cycle.end_date == None,
-                Cycle.start_date < event_date
+        else:
+            open_cycle = (
+                db.query(Cycle)
+                .filter(
+                    Cycle.id_history == history.id_history,
+                    Cycle.end_date == None,
+                    Cycle.start_date < event_date
+                )
+                .order_by(Cycle.start_date.desc())
+                .first()
             )
-            .order_by(Cycle.start_date.desc())
-            .first()
-        )
-        if open_cycle:
-            open_cycle.end_date = event_date - timedelta(days=1)
-            # Sanity check: end_date no puede ser anterior a start_date
-            if open_cycle.end_date < open_cycle.start_date:
-                open_cycle.end_date = open_cycle.start_date
-            db.commit()
+            if open_cycle:
+                open_cycle.end_date = event_date - timedelta(days=1)
+                # Sanity check: end_date no puede ser anterior a start_date
+                if open_cycle.end_date < open_cycle.start_date:
+                    open_cycle.end_date = open_cycle.start_date
+                db.commit()
 
-        new_cycle = Cycle(
-            id_history=history.id_history,
-            start_date=event_date,
-        )
-        db.add(new_cycle)
-        db.commit()
-        db.refresh(new_cycle)
-        update_cycle_stats(db, history.id_history)
-        cycle = new_cycle
+            new_cycle = Cycle(
+                id_history=history.id_history,
+                start_date=event_date,
+            )
+            db.add(new_cycle)
+            db.commit()
+            db.refresh(new_cycle)
+            update_cycle_stats(db, history.id_history)
+            cycle = new_cycle
 
     elif intent == "end_period":
         # Buscar el ciclo abierto más reciente
@@ -184,8 +187,6 @@ def log_day_from_chat(
         # 2. Si existe, lo actualizamos con los nuevos datos de Gemini
         for key, value in log_data.items():
             setattr(existing_log, key, value)
-        db.commit()
-        db.refresh(existing_log)
         status_msg = "Registro actualizado correctamente"
     else:
         # 3. Si no existe, lo creamos
@@ -195,9 +196,10 @@ def log_day_from_chat(
             **log_data
         )
         db.add(new_log)
-        db.commit()
-        db.refresh(new_log)
         status_msg = "Registro guardado correctamente"
+
+    db.commit()
+    db.refresh(new_log)
 
     return {
     "message": status_msg,
