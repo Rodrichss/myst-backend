@@ -57,7 +57,7 @@ def get_cycle_for_date(db: Session, history_id: int, log_date: date):
         ).order_by(Cycle.start_date.desc()).first()
     )
 
-# create daily log entry
+# create daily log entry (Con comportamiento UPSERT integrado)
 @router.post("/", response_model=DailyLogResponse)
 def create_daily_log(
     data: DailyLogCreate,
@@ -71,18 +71,28 @@ def create_daily_log(
     data_dict = DataNormalizerService.normalize_daily_log(data_dict)
     log_date = data_dict.get("date")
 
-    # encontrar ciclo
+    # 1. CLAVE DEL CAMBIO: Verificar si ya existe un log para esa fecha y ese usuario
+    existing_log = (
+        db.query(DailyLog)
+        .join(Cycle)
+        .filter(
+            Cycle.id_history == history.id_history,
+            DailyLog.date == log_date
+        )
+        .first()
+    )
+
+    # Encontrar el ciclo correspondiente para la fecha dada
     target_cycle = get_cycle_for_date(db, history.id_history, log_date)
 
-    # Si hay sangrado y no hay ciclo activo → crear ciclo
+    # Si hay sangrado y no hay ciclo activo o corresponde a un nuevo periodo → crear ciclo
     if data_dict.get("menstrual_flow", 0) > 0:
         should_create = False
- 
+
         if not target_cycle:
             should_create = True
         elif target_cycle.start_date < log_date:
             # Hay ciclo activo — verificar si el log_date corresponde a un nuevo periodo
-            # comparando con el último log con flujo en ese ciclo
             last_flow_log = (
                 db.query(DailyLog)
                 .filter(
@@ -94,7 +104,7 @@ def create_daily_log(
             )
             if not last_flow_log or (log_date - last_flow_log.date).days > MAX_GAP_DAYS:
                 should_create = True
- 
+
         if should_create:
             # Cerrar ciclo anterior si está abierto
             if target_cycle and not target_cycle.end_date:
@@ -102,12 +112,12 @@ def create_daily_log(
                 if target_cycle.end_date < target_cycle.start_date:
                     target_cycle.end_date = target_cycle.start_date
                 db.commit()
- 
+
             next_cycle = db.query(Cycle).filter(
                 Cycle.id_history == history.id_history,
                 Cycle.start_date > log_date
             ).order_by(Cycle.start_date.asc()).first()
- 
+
             target_cycle = Cycle(
                 id_history=history.id_history,
                 start_date=log_date,
@@ -117,20 +127,41 @@ def create_daily_log(
             db.commit()
             db.refresh(target_cycle)
             update_cycle_stats(db, history.id_history)
- 
-    # Fallback: usar el ciclo abierto más reciente
+
+    # Fallback: usar el ciclo abierto más reciente si no se determinó uno específico
     if not target_cycle:
         target_cycle = db.query(Cycle).filter(
             Cycle.id_history == history.id_history,
             Cycle.end_date == None
         ).order_by(Cycle.start_date.desc()).first()
- 
+
     if not target_cycle:
         raise HTTPException(
             status_code=400,
             detail="No se encontró un ciclo para esta fecha. Registra un flujo menstrual primero."
         )
- 
+
+    # 2. SEGUNDA CLAVE: Si el log existe, hacemos un PATCH encubierto (UPDATE)
+    if existing_log:
+        # Si por alguna razón el ciclo cambió debido a la lógica de arriba, lo reasignamos
+        existing_log.id_cycle = target_cycle.id_cycle
+
+        for key, value in data_dict.items():
+            # Evitamos pisar las llaves de control estructurales de la base de datos
+            if key in ["id_log", "id_cycle", "date"]:
+                continue
+
+            # Replicamos tu lógica inteligente de actualización del PATCH original:
+            if value is None:
+                setattr(existing_log, key, None)
+            else:
+                setattr(existing_log, key, value)
+
+        db.commit()
+        db.refresh(existing_log)
+        return existing_log
+
+    # 3. Si NO existe el log, procedemos con el INSERT original con total seguridad
     log = DailyLog(
         **data_dict,
         id_cycle=target_cycle.id_cycle
