@@ -8,7 +8,7 @@ from app.models.user import User
 
 from app.services.clinical_history_service import get_or_create_clinical_history
 from app.services.data_normalizer_service import DataNormalizerService
-from app.services.cycle_stats_service import update_cycle_stats
+from app.services.cycle_stats_service import update_cycle_stats, recalculate_cycle_end_dates
 
 from app.models.clinical_history import ClinicalHistory
 from app.models.cycle import Cycle
@@ -92,12 +92,13 @@ def create_daily_log(
         if not target_cycle:
             should_create = True
         elif target_cycle.start_date < log_date:
-            # Hay ciclo activo — verificar si el log_date corresponde a un nuevo periodo
             last_flow_log = (
                 db.query(DailyLog)
+                .join(Cycle)
                 .filter(
-                    DailyLog.id_cycle == target_cycle.id_cycle,
-                    DailyLog.menstrual_flow > 0
+                    Cycle.id_history == history.id_history,
+                    DailyLog.menstrual_flow > 0,
+                    DailyLog.date < log_date
                 )
                 .order_by(DailyLog.date.desc())
                 .first()
@@ -106,26 +107,14 @@ def create_daily_log(
                 should_create = True
 
         if should_create:
-            # Cerrar ciclo anterior si está abierto
-            if target_cycle and not target_cycle.end_date:
-                target_cycle.end_date = log_date - timedelta(days=1)
-                if target_cycle.end_date < target_cycle.start_date:
-                    target_cycle.end_date = target_cycle.start_date
-                db.commit()
-
-            next_cycle = db.query(Cycle).filter(
-                Cycle.id_history == history.id_history,
-                Cycle.start_date > log_date
-            ).order_by(Cycle.start_date.asc()).first()
-
             target_cycle = Cycle(
                 id_history=history.id_history,
                 start_date=log_date,
-                end_date=next_cycle.start_date - timedelta(days=1) if next_cycle else None
             )
             db.add(target_cycle)
             db.commit()
             db.refresh(target_cycle)
+            recalculate_cycle_end_dates(db, history.id_history)
             update_cycle_stats(db, history.id_history)
 
     # Fallback: usar el ciclo abierto más reciente si no se determinó uno específico

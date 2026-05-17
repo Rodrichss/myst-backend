@@ -1,8 +1,8 @@
-# app/services/cycle_stats_service.py
 from sqlalchemy.orm import Session
 from app.models.cycle import Cycle
 from app.models.clinical_history import ClinicalHistory
 
+from datetime import timedelta
 
 def _compute_cycle_lengths(cycles: list) -> list[int]:
     """Calcula las longitudes en días entre start_dates consecutivos."""
@@ -75,4 +75,24 @@ def update_cycle_stats(db: Session, id_history: int) -> None:
             cycles_with_date, key=lambda c: c.start_date
         ).start_date
 
+    db.commit()
+
+
+def recalculate_cycle_end_dates(db: Session, id_history: int) -> None:
+    """
+    Recalcula end_date de todos los ciclos de una historia
+    ordenándolos por start_date. Cada ciclo termina el día
+    anterior al inicio del siguiente.
+    """
+    cycles = (
+        db.query(Cycle)
+        .filter(Cycle.id_history == id_history)
+        .order_by(Cycle.start_date.asc())
+        .all()
+    )
+    for i, cycle in enumerate(cycles):
+        if i < len(cycles) - 1:
+            cycle.end_date = cycles[i + 1].start_date - timedelta(days=1)
+        else:
+            cycle.end_date = None  # El más reciente queda abierto
     db.commit()

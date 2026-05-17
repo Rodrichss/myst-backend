@@ -2,11 +2,14 @@ import google.genai as genai
 import os
 import json
 import re
-from datetime import date, timedelta
+from datetime import datetime, timedelta
+import pytz
 
 client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY")
 )
+
+MEXICO_TZ = pytz.timezone("America/Mexico_City")
 
 # ── System prompt estático (candidato a cache) ─────────────────────────────────
 # Se define una sola vez. Gemini 2.5 flash-lite soporta implicit caching:
@@ -75,7 +78,8 @@ Return a JSON with three main keys:
 
 
 def analyze_daily_message(message: str) -> dict:
-    today = date.today()
+    now_mexico = datetime.now(MEXICO_TZ)
+    today = now_mexico.date()
     yesterday = (today - timedelta(days=1)).isoformat()
 
     # User prompt: solo fecha + mensaje (corto, varía por request)
